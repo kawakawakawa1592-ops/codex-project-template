@@ -1,0 +1,50 @@
+name: Codex Project Task
+description: Plan a Codex implementation task with review-ready acceptance criteria.
+title: "[Codex] "
+labels:
+  - codex
+  - needs-triage
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should Codex build, fix, or investigate?
+      placeholder: Describe the user-facing outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Add relevant links, files, screenshots, constraints, or prior decisions.
+      placeholder: Include anything Codex should know before changing code.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: List the concrete conditions that must be true before the task is done.
+      placeholder: |
+        - The feature works for ...
+        - Tests or manual checks cover ...
+        - GPT review passes on the PR.
+    validations:
+      required: true
+  - type: checkboxes
+    id: review_setup
+    attributes:
+      label: GPT Review Setup
+      options:
+        - label: `.github/workflows/gpt-review.yml` exists in this repository.
+        - label: `OPENAI_API_KEY` is registered as a GitHub Actions secret.
+        - label: `PRIMARY_REVIEW_MODEL` is set to `gpt-4.1-mini` or intentionally overridden.
+        - label: `FINAL_REVIEW_MODEL` is set to `gpt-5.5` or intentionally overridden.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes for Review
+      description: Anything the GPT reviewer or human reviewer should pay special attention to.
+    validations:
+      required: false
