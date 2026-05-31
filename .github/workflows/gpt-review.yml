@@ -1,0 +1,19 @@
+name: GPT Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  gpt-review:
+    uses: kawakawakawa1592-ops/ai-review-workflows/.github/workflows/reusable-gpt-review.yml@main
+    with:
+      primary_review_model: ${{ vars.PRIMARY_REVIEW_MODEL || 'gpt-4.1-mini' }}
+      final_review_model: ${{ vars.FINAL_REVIEW_MODEL || 'gpt-5.5' }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
