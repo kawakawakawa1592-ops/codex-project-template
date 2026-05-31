@@ -28,7 +28,7 @@ New repositories that use this template get:
 - An issue template for Codex tasks
 - A pull request template with GPT review checks
 - A new project startup checklist at `docs/new-project-checklist.md`
-- Documentation for OpenAI API key, GitHub Variables, and GitHub Secrets setup
+- Documentation for the required OpenAI API key and optional model overrides
 
 The caller workflow uses the shared reusable workflow from:
 
@@ -44,106 +44,64 @@ Every new Codex project includes this caller workflow:
 .github/workflows/gpt-review.yml
 ```
 
-It calls the central reusable workflow:
+It calls the central reusable workflow and passes only the required secret:
 
 ```yaml
 jobs:
   gpt-review:
     uses: kawakawakawa1592-ops/ai-review-workflows/.github/workflows/reusable-gpt-review.yml@main
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-The workflow pins the default model configuration:
+Model defaults are provided by the reusable workflow:
 
 ```text
 PRIMARY_REVIEW_MODEL=gpt-4.1-mini
 FINAL_REVIEW_MODEL=gpt-5.5
 ```
 
-## Use This Template Guarantee
-
-Projects created from this template are wired for the full review path:
+## Use This Template Flow
 
 ```text
-Codex change
+Use this template
 v
-Pull request
+Create repository
 v
-.github/workflows/gpt-review.yml
+Register OPENAI_API_KEY
 v
-kawakawakawa1592-ops/ai-review-workflows reusable workflow
-v
-Primary GPT review
-v
-Final GPT review
-v
-Teacher-facing PR summary
+Start Codex
 ```
 
-This path is guaranteed by the committed template files when these repository settings are present:
+## Required Setting
 
-- GitHub Actions is enabled.
-- `OPENAI_API_KEY` exists as an Actions secret.
-- `PRIMARY_REVIEW_MODEL` exists as an Actions variable with value `gpt-4.1-mini`, or the default is accepted.
-- `FINAL_REVIEW_MODEL` exists as an Actions variable with value `gpt-5.5`, or the default is accepted.
-- The pull request event is one of `opened`, `synchronize`, `reopened`, or `ready_for_review`.
-
-The first test PR should confirm that the workflow posts a GPT review comment containing a teacher-facing summary.
-
-## Initial Setup For A New Repository
-
-1. Open this repository on GitHub.
-2. Click `Use this template`.
-3. Create the new Codex project repository.
-4. Register the `OPENAI_API_KEY` secret.
-5. Register the GitHub Variables.
-6. Open a small test PR.
-7. Confirm the `GPT Review` workflow runs.
-8. Confirm the PR receives a GPT review comment with a teacher-facing summary.
-
-## GitHub Variables Setup
-
-Configure variables in each repository created from this template.
-
-1. Open the target repository on GitHub.
-2. Open `Settings`.
-3. Open `Secrets and variables`.
-4. Open `Actions`.
-5. Select the `Variables` tab.
-6. Click `New repository variable`.
-7. Add these values:
-
-```text
-PRIMARY_REVIEW_MODEL=gpt-4.1-mini
-FINAL_REVIEW_MODEL=gpt-5.5
-```
-
-## GitHub Secrets Setup
-
-Configure the OpenAI API key in each repository created from this template.
-
-1. Open the target repository on GitHub.
-2. Open `Settings`.
-3. Open `Secrets and variables`.
-4. Open `Actions`.
-5. Select the `Secrets` tab.
-6. Click `New repository secret`.
-7. Add this secret:
+Register this Actions secret in each new repository:
 
 ```text
 OPENAI_API_KEY=sk-...
 ```
 
-GitHub masks secret values in Actions logs.
+Use the OpenAI API key for the account that should pay for review usage. Do not commit the key to the repository, do not put it in README files, and do not paste it into issues or pull requests.
 
-## OPENAI_API_KEY Registration
+## Optional Settings
 
-The required secret name is:
+These Actions variables are optional. Add them only when you want to override the default models:
 
 ```text
-OPENAI_API_KEY
+PRIMARY_REVIEW_MODEL=gpt-4.1-mini
+FINAL_REVIEW_MODEL=gpt-5.5
 ```
 
-Use the OpenAI API key for the account that should pay for review usage. Do not commit the key to the repository, do not put it in README files, and do not paste it into issues or pull requests.
+If these variables are not configured, the reusable workflow automatically uses `gpt-4.1-mini` for the primary review and `gpt-5.5` for the final review.
+
+## Initial Setup For A New Repository
+
+1. Click `Use this template`.
+2. Create the new repository.
+3. Register the `OPENAI_API_KEY` Actions secret.
+4. Start Codex.
+
+The first test PR should confirm that the `GPT Review` workflow runs and posts a teacher-facing summary.
 
 ## PASS / FAIL Policy
 
