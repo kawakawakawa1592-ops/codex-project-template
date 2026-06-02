@@ -29,10 +29,38 @@ New repositories that use this template get:
 - An automatic GPT Review workflow at `.github/workflows/gpt-review.yml`
 - A repository-local review script at `scripts/project_gpt_review.py`
 - A review prompt at `.github/prompts/project_review_prompt.md`
+- `PROJECT_VISION.md` for project goals, users, and completion criteria
+- `PROJECT_MEMORY.md` for decisions, constraints, review notes, and next actions
 - An issue template for Codex tasks
 - A pull request template with GPT review checks
 - A new project startup checklist at `docs/new-project-checklist.md`
 - Documentation for OpenAI API key, GitHub Variables, and GitHub Secrets setup
+
+## Project Context Files
+
+Each project created from this template includes two context files for Codex and GPT Review.
+
+### PROJECT_VISION.md
+
+Use this file to record the product owner's intent:
+
+- project purpose
+- target users
+- product goals
+- out-of-scope items
+- definition of done
+
+### PROJECT_MEMORY.md
+
+Use this file to record what changed during the project:
+
+- decisions and reasons
+- technical, design, and operation constraints
+- GPT Review notes
+- Codex fixes
+- next actions
+
+Automatic GPT Review can use these files together with the issue, PR, README, workflow, prompt, and diff to judge whether the result matches the creator's intent.
 
 ## Automatic GPT Review Workflow
 
@@ -121,9 +149,11 @@ Codex does not need to ask GPT Review to run. The first test PR should confirm t
 3. Create the new Codex project repository.
 4. Register the `OPENAI_API_KEY` secret.
 5. Register the GitHub Variables.
-6. Open a small test PR.
-7. Confirm the `GPT Review` workflow starts automatically.
-8. Confirm the PR receives a GPT review comment with a teacher-facing summary.
+6. Fill in `PROJECT_VISION.md`.
+7. Update `PROJECT_MEMORY.md` as decisions are made.
+8. Open a small test PR.
+9. Confirm the `GPT Review` workflow starts automatically.
+10. Confirm the PR receives a GPT review comment with a teacher-facing summary.
 
 ## GitHub Variables Setup
 
