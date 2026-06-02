@@ -8,10 +8,18 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm `.github/workflows/gpt-review.yml` exists.
 - [ ] Confirm `.github/prompts/project_review_prompt.md` exists.
 - [ ] Confirm `scripts/project_gpt_review.py` exists.
+- [ ] Confirm `PROJECT_VISION.md` exists.
+- [ ] Confirm `PROJECT_MEMORY.md` exists.
 - [ ] Confirm `.github/ISSUE_TEMPLATE/codex_project_task.yml` exists.
 - [ ] Confirm `.github/pull_request_template.md` exists.
 - [ ] Confirm `docs/new-project-checklist.md` exists.
 - [ ] Confirm GitHub Actions are enabled for the repository.
+
+## Project Context Files
+
+- [ ] Fill in `PROJECT_VISION.md` with the project purpose, target users, product goals, out-of-scope items, and definition of done.
+- [ ] Update `PROJECT_MEMORY.md` with important decisions, constraints, review notes, Codex fixes, and next actions.
+- [ ] Keep both files current so Codex and automatic GPT Review can evaluate work against the creator's intent.
 
 ## GitHub Secrets
 
