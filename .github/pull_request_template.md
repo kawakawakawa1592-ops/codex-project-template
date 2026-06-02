@@ -5,17 +5,23 @@
 ## Validation
 
 - [ ] I ran the relevant local checks, or explained why they were not run.
-- [ ] The GPT review workflow is expected to run on this PR.
+- [ ] The GPT review workflow is expected to start automatically on this PR.
 - [ ] Any generated teacher-facing summary can be understood by a non-engineer.
 
 ## GPT Review Setup
 
 - [ ] `.github/workflows/gpt-review.yml` is present.
-- [ ] The workflow calls `kawakawakawa1592-ops/ai-review-workflows`.
+- [ ] The workflow runs on pull request `opened`, `synchronize`, `reopened`, and `ready_for_review` events.
+- [ ] The workflow has no `paths` restriction that would skip ordinary PRs.
+- [ ] The workflow uses trusted base-branch review code separately from PR content.
+- [ ] OpenAI secrets are scoped only to the trusted review step.
+- [ ] Codex does not need to request GPT Review manually.
+- [ ] `scripts/project_gpt_review.py` is present and classifies PRs from changed files.
+- [ ] `.github/prompts/project_review_prompt.md` is present.
 - [ ] `OPENAI_API_KEY` is configured in GitHub Actions secrets.
 - [ ] `PRIMARY_REVIEW_MODEL` is `gpt-4.1-mini` unless intentionally changed.
 - [ ] `FINAL_REVIEW_MODEL` is `gpt-5.5` unless intentionally changed.
-- [ ] The expected flow is Codex -> PR -> GPT review -> teacher-facing summary.
+- [ ] The expected flow is Codex -> PR -> automatic GPT review -> teacher-facing summary.
 
 ## Notes
 

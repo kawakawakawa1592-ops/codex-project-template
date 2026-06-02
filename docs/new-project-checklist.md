@@ -6,6 +6,8 @@ Use this checklist whenever starting a new Codex GitHub repository.
 
 - [ ] Create the new GitHub repository with `Use this template`.
 - [ ] Confirm `.github/workflows/gpt-review.yml` exists.
+- [ ] Confirm `.github/prompts/project_review_prompt.md` exists.
+- [ ] Confirm `scripts/project_gpt_review.py` exists.
 - [ ] Confirm `.github/ISSUE_TEMPLATE/codex_project_task.yml` exists.
 - [ ] Confirm `.github/pull_request_template.md` exists.
 - [ ] Confirm `docs/new-project-checklist.md` exists.
@@ -30,14 +32,25 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Add `PRIMARY_REVIEW_MODEL` with value `gpt-4.1-mini`.
 - [ ] Add `FINAL_REVIEW_MODEL` with value `gpt-5.5`.
 
+## Automatic GPT Review
+
+- [ ] Confirm the workflow runs on pull request `opened`, `synchronize`, `reopened`, and `ready_for_review` events.
+- [ ] Confirm the workflow uses both `pull_request` and `pull_request_target` with no `paths` restriction.
+- [ ] Confirm the `pull_request` job performs only no-secret syntax validation.
+- [ ] Confirm the `pull_request_target` job checks out trusted base code separately from PR content.
+- [ ] Confirm OpenAI secrets are scoped only to the trusted review step.
+- [ ] Confirm Codex does not need to request GPT Review manually.
+- [ ] Confirm `scripts/project_gpt_review.py` detects PR mode from changed files.
+- [ ] Confirm PRs without `submission/` are still reviewed as template/workflow/setup PRs when appropriate.
+- [ ] Confirm workflow, script, prompt, README, docs, templates, project_rules, manuscripts, and references can be included in review context when present.
+
 ## First Pull Request
 
 - [ ] Create a small initial PR.
-- [ ] Confirm the `GPT Review` workflow starts.
-- [ ] Confirm `.github/workflows/gpt-review.yml` calls `kawakawakawa1592-ops/ai-review-workflows`.
+- [ ] Confirm the `GPT Review` workflow starts automatically.
 - [ ] Confirm the PR receives a GPT review comment.
 - [ ] Confirm the GPT review comment includes a teacher-facing summary.
 - [ ] Confirm `REVIEW_STATUS` is shown in the workflow logs.
 - [ ] Confirm `FINAL_REVIEW_STATUS` is shown in the workflow logs.
-- [ ] Confirm the flow is `Codex -> PR -> GPT review -> teacher-facing summary`.
+- [ ] Confirm the flow is `Codex -> PR -> automatic GPT review -> teacher-facing summary`.
 - [ ] Fix any setup problems before starting real feature work.
