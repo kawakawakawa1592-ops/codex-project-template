@@ -105,11 +105,30 @@ def review_artifact_text(repo: str, run_id: int, token: str) -> str | None:
     return None
 
 
+def final_review_section(review: str) -> str:
+    marker = "# Final GPT Review"
+    if marker not in review:
+        return review
+    return review.rsplit(marker, 1)[1]
+
+
+def status_value(section: str, key: str) -> str | None:
+    prefix = f"{key}:"
+    for line in section.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(prefix):
+            return stripped[len(prefix) :].strip().split()[0]
+    return None
+
+
 def has_passing_review(review: str) -> bool:
+    final_section = final_review_section(review)
+    final_status = status_value(final_section, "FINAL_REVIEW_STATUS")
+    review_status = status_value(final_section, "REVIEW_STATUS")
     return (
-        "FINAL_REVIEW_STATUS: PASS" in review
+        final_status == "PASS"
+        and review_status != "NEEDS_REVISION"
         and "REVIEW_STATUS: NEEDS_REVISION" not in review
-        and "FINAL_REVIEW_STATUS: FAIL" not in review
     )
 
 
@@ -166,7 +185,7 @@ def main() -> int:
         print("Skipping because this GPT Review run has no project-gpt-review artifact.")
         return 0
     if not has_passing_review(review):
-        print("Skipping because the GPT Review artifact does not contain a clean FINAL_REVIEW_STATUS: PASS.")
+        print("Skipping because the GPT Review artifact does not contain a clean final FINAL_REVIEW_STATUS: PASS.")
         return 0
 
     pr = get_pull_request(repo, run, token)
