@@ -165,6 +165,18 @@ def post_pr_comment(body: str) -> None:
         raise RuntimeError(payload.get("message") or f"GitHub comment request failed with HTTP {status}")
 
 
+def write_review_metadata(event: dict, mode: str, changed: list[str]) -> None:
+    pr = event.get("pull_request", {})
+    metadata = {
+        "pr_number": pr.get("number"),
+        "base_sha": os.environ.get("PR_BASE_SHA", "") or pr.get("base", {}).get("sha"),
+        "head_sha": os.environ.get("PR_HEAD_SHA", "") or pr.get("head", {}).get("sha"),
+        "review_mode": mode,
+        "changed_files": changed,
+    }
+    Path("project_gpt_review_metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     event = load_event()
     pr = event.get("pull_request", {})
@@ -172,6 +184,7 @@ def main() -> int:
     reviewer_prompt = prompt_file.read_text(encoding="utf-8") if prompt_file.exists() else "Review the PR."
     changed = sorted(changed_files())
     mode = review_mode(changed)
+    write_review_metadata(event, mode, changed)
     context = build_context(iter_paths(changed))
     pr_context = "\n\n".join([
         f"Review mode: {mode}",
