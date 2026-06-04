@@ -49,6 +49,7 @@ The repository can automatically merge a PR only when all of these are true:
 
 - The completed workflow is `GPT Review`.
 - The workflow conclusion is `success`.
+- The completed GPT Review run is the trusted `pull_request_target` run.
 - The `project-gpt-review` artifact contains `FINAL_REVIEW_STATUS: PASS`.
 - The artifact does not contain `REVIEW_STATUS: NEEDS_REVISION`.
 - The reviewed head SHA from the workflow run or review metadata matches the current PR head SHA.
