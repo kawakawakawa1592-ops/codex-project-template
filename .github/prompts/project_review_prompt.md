@@ -51,6 +51,7 @@ If a PR creates or changes auto-merge behavior, verify all of these:
 
 - Auto-merge requires the completed workflow to be `GPT Review`.
 - Auto-merge requires the workflow conclusion to be `success`.
+- Auto-merge only trusts completed GPT Review runs where `workflow_run.event` is `pull_request_target`.
 - Auto-merge verifies the review artifact contains `FINAL_REVIEW_STATUS: PASS`.
 - Auto-merge refuses artifacts containing `REVIEW_STATUS: NEEDS_REVISION` or `FINAL_REVIEW_STATUS: FAIL`.
 - Auto-merge verifies the reviewed head SHA from the workflow run or review metadata matches the current PR head SHA before merging.
@@ -83,6 +84,7 @@ Set `REVIEW_STATUS: NEEDS_REVISION` when any of the following are present:
 - PR mode detection is missing, misleading, or based on unchanged context instead of changed files.
 - Workflow, script, prompt, README, templates, project_rules, manuscripts, references, or docs changes weaken review coverage.
 - Auto-merge can happen without `FINAL_REVIEW_STATUS: PASS`.
+- Auto-merge can happen from an untrusted `pull_request` workflow run instead of the trusted `pull_request_target` run.
 - Auto-merge can happen when the passing review artifact belongs to an older PR head SHA.
 - Auto-merge can happen on draft, blocked, human-needed, or unmergeable PRs.
 - Autopilot documentation implies Codex can be started by GitHub Actions alone without a separate integration.
