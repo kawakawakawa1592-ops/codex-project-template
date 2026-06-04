@@ -20,6 +20,8 @@ v
 Teacher-facing summary and Codex Advisory
 v
 PASS / WARN / FAIL
+v
+Auto-merge when PASS and no stop condition exists
 ```
 
 ## What This Template Provides
@@ -27,13 +29,16 @@ PASS / WARN / FAIL
 New repositories that use this template get:
 
 - An automatic GPT Review workflow at `.github/workflows/gpt-review.yml`
+- An automatic merge workflow at `.github/workflows/auto-merge-reviewed-pr.yml`
 - A repository-local review script at `scripts/project_gpt_review.py`
+- A repository-local auto-merge script at `scripts/auto_merge_reviewed_pr.py`
 - A review prompt at `.github/prompts/project_review_prompt.md`
 - `PROJECT_VISION.md` for project goals, users, and completion criteria
 - `PROJECT_MEMORY.md` for decisions, constraints, review notes, and next actions
-- An issue template for Codex tasks
-- A pull request template with GPT review checks
+- An issue template for Codex tasks and the `codex-ready` queue
+- A pull request template with GPT review and auto-merge checks
 - A new project startup checklist at `docs/new-project-checklist.md`
+- Autopilot loop guidance at `docs/codex-autopilot.md`
 - Documentation for OpenAI API key, GitHub Variables, and GitHub Secrets setup
 
 ## Project Context Files
@@ -128,6 +133,74 @@ Codex Advisory:
 
 The `Codex Fix Instructions` section then gives Codex a short ordered repair list.
 
+## Auto-Merge
+
+Every new Codex project includes this workflow:
+
+```text
+.github/workflows/auto-merge-reviewed-pr.yml
+```
+
+It runs after `GPT Review` completes. It merges a PR only when all of these are true:
+
+- `GPT Review` completed successfully.
+- The `project-gpt-review` artifact contains `FINAL_REVIEW_STATUS: PASS`.
+- The artifact does not contain `REVIEW_STATUS: NEEDS_REVISION`.
+- The PR is open.
+- The PR is not a draft.
+- The PR is mergeable.
+- The PR does not have a blocking label.
+
+Default blocking labels:
+
+```text
+needs-human,blocked,no-auto-merge,hold
+```
+
+The merge method defaults to `merge`. You can override it with this repository variable:
+
+```text
+AUTO_MERGE_METHOD=merge / squash / rebase
+```
+
+You can override blocking labels with:
+
+```text
+AUTO_MERGE_BLOCK_LABELS=needs-human,blocked,no-auto-merge,hold
+```
+
+## Codex Autopilot Loop
+
+This template supports a queue-based project loop through GitHub issues.
+
+Recommended flow:
+
+```text
+User describes the desired product
+v
+Codex writes PROJECT_VISION.md and PROJECT_MEMORY.md
+v
+Codex breaks the project into small issues
+v
+Ready issues receive codex-ready
+v
+User says 作成開始 or 次へ
+v
+Codex chooses the next codex-ready issue
+v
+Codex implements one issue and opens one PR
+v
+GPT Review audits the PR and provides Codex Advisory if needed
+v
+PASS triggers auto-merge unless a stop condition exists
+v
+Codex can proceed to the next codex-ready issue when its Codex integration is triggered
+```
+
+Use `docs/codex-autopilot.md` for the full issue queue and stop-condition rules.
+
+Important limitation: GitHub Actions can auto-merge passing PRs, but starting Codex after merge depends on the Codex integration available in the repository or current thread. If no Codex trigger integration is active, the user can still say `次へ` and Codex should continue from the next `codex-ready` issue.
+
 ## PR Type Detection
 
 `project_gpt_review.py` automatically classifies PRs into one of these modes:
@@ -158,6 +231,10 @@ v
 Final GPT review
 v
 Teacher-facing PR summary and Codex Advisory
+v
+.github/workflows/auto-merge-reviewed-pr.yml
+v
+Auto-merge when PASS and no stop condition exists
 ```
 
 This path is guaranteed by the committed template files when these repository settings are present:
@@ -179,9 +256,11 @@ Codex does not need to ask GPT Review to run. The first test PR should confirm t
 5. Register the GitHub Variables.
 6. Fill in `PROJECT_VISION.md`.
 7. Update `PROJECT_MEMORY.md` as decisions are made.
-8. Open a small test PR.
-9. Confirm the `GPT Review` workflow starts automatically.
-10. Confirm the PR receives a GPT review comment with a teacher-facing summary and Codex Advisory.
+8. Plan small `codex-ready` issues.
+9. Open a small test PR.
+10. Confirm the `GPT Review` workflow starts automatically.
+11. Confirm the PR receives a GPT review comment with a teacher-facing summary and Codex Advisory.
+12. Confirm a PASS PR auto-merges when no stop condition exists.
 
 ## GitHub Variables Setup
 
@@ -198,6 +277,8 @@ Configure variables in each repository created from this template.
 ```text
 PRIMARY_REVIEW_MODEL=gpt-4.1-mini
 FINAL_REVIEW_MODEL=gpt-5.5
+AUTO_MERGE_METHOD=merge
+AUTO_MERGE_BLOCK_LABELS=needs-human,blocked,no-auto-merge,hold
 ```
 
 ## GitHub Secrets Setup
@@ -230,7 +311,7 @@ Use the OpenAI API key for the account that should pay for review usage. Do not 
 
 ## PASS / WARN / FAIL Policy
 
-The primary review returns `REVIEW_STATUS: NEEDS_REVISION` when the diff appears to contain a likely bug, missing requirement, security risk, broken workflow, weakened automatic review behavior, vague Codex Advisory, or important test gap. Otherwise it returns `REVIEW_STATUS: PASS`.
+The primary review returns `REVIEW_STATUS: NEEDS_REVISION` when the diff appears to contain a likely bug, missing requirement, security risk, broken workflow, weakened automatic review behavior, unsafe auto-merge behavior, vague Codex Advisory, or important test gap. Otherwise it returns `REVIEW_STATUS: PASS`.
 
 The final review checks the primary result and the PR diff again. It returns `FINAL_REVIEW_STATUS: PASS` only when the pull request appears mergeable from the available diff, `FINAL_REVIEW_STATUS: WARN` when only non-blocking human follow-up remains, and `FINAL_REVIEW_STATUS: FAIL` when blocking issues remain.
 
