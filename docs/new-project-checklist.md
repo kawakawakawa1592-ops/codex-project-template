@@ -7,9 +7,11 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Create the new GitHub repository with `Use this template`.
 - [ ] Confirm `.github/workflows/gpt-review.yml` exists.
 - [ ] Confirm `.github/workflows/auto-merge-reviewed-pr.yml` exists.
+- [ ] Confirm `.github/workflows/codex-next-issue-handoff.yml` exists.
 - [ ] Confirm `.github/prompts/project_review_prompt.md` exists.
 - [ ] Confirm `scripts/project_gpt_review.py` exists.
 - [ ] Confirm `scripts/auto_merge_reviewed_pr.py` exists.
+- [ ] Confirm `scripts/codex_next_issue_handoff.py` exists.
 - [ ] Confirm `PROJECT_VISION.md` exists.
 - [ ] Confirm `PROJECT_MEMORY.md` exists.
 - [ ] Confirm `.github/ISSUE_TEMPLATE/codex_project_task.yml` exists.
@@ -44,6 +46,20 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Add `FINAL_REVIEW_MODEL` with value `gpt-5.5`.
 - [ ] Optionally add `AUTO_MERGE_METHOD` with value `merge`, `squash`, or `rebase`.
 - [ ] Optionally add `AUTO_MERGE_BLOCK_LABELS` with value `needs-human,blocked,no-auto-merge,hold`.
+- [ ] Optionally add `CODEX_HANDOFF_READY_LABELS` with value `codex-ready,ready-for-codex`.
+- [ ] Optionally add `CODEX_HANDOFF_BLOCK_LABELS` with value `needs-human,blocked,hold,no-auto-merge,codex-active`.
+- [ ] Optionally add `CODEX_HANDOFF_ACTIVE_LABEL` with value `codex-active`.
+- [ ] Optionally add `CODEX_HANDOFF_PRIORITY_LABEL` with value `priority-high`.
+
+## Codex Cloud Environment
+
+- [ ] Open [Codex environments](https://chatgpt.com/codex/cloud/settings/environments).
+- [ ] Create an environment for the repository.
+- [ ] Use the `universal` container image unless the project needs a custom image.
+- [ ] Leave setup script on automatic unless the project needs custom dependencies.
+- [ ] Leave agent internet access disabled unless the project requires internet during the agent phase.
+- [ ] Save the environment.
+- [ ] Test with an issue comment such as `@codex please confirm you can run from this issue`.
 
 ## Automatic GPT Review
 
@@ -73,15 +89,26 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm auto-merge skips unmergeable PRs.
 - [ ] Confirm auto-merge skips PRs with `needs-human`, `blocked`, `no-auto-merge`, or `hold`.
 
+## Codex Next-Issue Handoff
+
+- [ ] Confirm `.github/workflows/codex-next-issue-handoff.yml` runs after merged PRs.
+- [ ] Confirm the handoff workflow can also be run manually with `workflow_dispatch`.
+- [ ] Confirm `scripts/codex_next_issue_handoff.py` selects only open issues, not pull requests.
+- [ ] Confirm handoff accepts `codex-ready` and `ready-for-codex` labels.
+- [ ] Confirm handoff skips `needs-human`, `blocked`, `hold`, `no-auto-merge`, and `codex-active`.
+- [ ] Confirm handoff prefers `priority-high`, otherwise the oldest eligible issue.
+- [ ] Confirm handoff adds `codex-active` and posts an `@codex` start comment.
+- [ ] Confirm duplicate handoff comments are prevented by the marker comment.
+
 ## Codex Autopilot
 
 - [ ] Create small issues for each implementation step.
-- [ ] Label ready issues with `codex-ready`.
+- [ ] Label ready issues with `codex-ready` or `ready-for-codex`.
 - [ ] Label high-priority ready issues with `priority-high`.
 - [ ] Use `needs-human`, `blocked`, or `hold` when Codex should stop.
-- [ ] Keep each `codex-ready` issue narrow enough for one PR when possible.
+- [ ] Keep each ready issue narrow enough for one PR when possible.
 - [ ] Confirm Codex reads `PROJECT_VISION.md`, `PROJECT_MEMORY.md`, and open issues before choosing the next step.
-- [ ] Confirm the repository has a Codex trigger integration if Codex should start automatically after merge. Otherwise, the user can say `次へ`.
+- [ ] Confirm the repository has a Codex Cloud environment if Codex should start automatically after merge. Otherwise, the user can say `次へ`.
 
 ## First Pull Request
 
@@ -94,4 +121,5 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm `FINAL_REVIEW_STATUS` is shown in the workflow logs.
 - [ ] Confirm the flow is `Codex -> PR -> automatic GPT review -> teacher-facing summary -> Codex Advisory`.
 - [ ] Confirm a PASS PR auto-merges when no stop condition exists.
+- [ ] Confirm a merged PR hands off the next ready issue when one exists.
 - [ ] Fix any setup problems before starting real feature work.
