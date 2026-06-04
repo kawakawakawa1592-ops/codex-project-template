@@ -28,8 +28,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate review script syntax
-        run: python -m py_compile scripts/project_gpt_review.py
+      - name: Validate project Python script syntax
+        run: python -m py_compile scripts/*.py
 
   project-gpt-review:
     if: github.event_name == 'pull_request_target'
