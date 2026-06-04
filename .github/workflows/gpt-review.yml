@@ -75,5 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: project-gpt-review
-          path: project_gpt_review.md
+          path: |
+            project_gpt_review.md
+            project_gpt_review_metadata.json
           if-no-files-found: ignore

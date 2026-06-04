@@ -1,0 +1,36 @@
+name: Auto Merge Reviewed PR
+
+on:
+  workflow_run:
+    workflows: ["GPT Review"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-merge-reviewed-pr:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted automation code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Merge PR after passing GPT Review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AUTO_MERGE_METHOD: ${{ vars.AUTO_MERGE_METHOD || 'merge' }}
+          AUTO_MERGE_BLOCK_LABELS: ${{ vars.AUTO_MERGE_BLOCK_LABELS || 'needs-human,blocked,no-auto-merge,hold' }}
+        run: python scripts/auto_merge_reviewed_pr.py

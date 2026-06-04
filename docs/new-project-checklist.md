@@ -6,13 +6,16 @@ Use this checklist whenever starting a new Codex GitHub repository.
 
 - [ ] Create the new GitHub repository with `Use this template`.
 - [ ] Confirm `.github/workflows/gpt-review.yml` exists.
+- [ ] Confirm `.github/workflows/auto-merge-reviewed-pr.yml` exists.
 - [ ] Confirm `.github/prompts/project_review_prompt.md` exists.
 - [ ] Confirm `scripts/project_gpt_review.py` exists.
+- [ ] Confirm `scripts/auto_merge_reviewed_pr.py` exists.
 - [ ] Confirm `PROJECT_VISION.md` exists.
 - [ ] Confirm `PROJECT_MEMORY.md` exists.
 - [ ] Confirm `.github/ISSUE_TEMPLATE/codex_project_task.yml` exists.
 - [ ] Confirm `.github/pull_request_template.md` exists.
 - [ ] Confirm `docs/new-project-checklist.md` exists.
+- [ ] Confirm `docs/codex-autopilot.md` exists.
 - [ ] Confirm GitHub Actions are enabled for the repository.
 
 ## Project Context Files
@@ -39,6 +42,8 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Open the `Variables` tab.
 - [ ] Add `PRIMARY_REVIEW_MODEL` with value `gpt-4.1-mini`.
 - [ ] Add `FINAL_REVIEW_MODEL` with value `gpt-5.5`.
+- [ ] Optionally add `AUTO_MERGE_METHOD` with value `merge`, `squash`, or `rebase`.
+- [ ] Optionally add `AUTO_MERGE_BLOCK_LABELS` with value `needs-human,blocked,no-auto-merge,hold`.
 
 ## Automatic GPT Review
 
@@ -59,6 +64,25 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm `Codex Fix Instructions` are specific enough for GitHub-internal Codex to implement without the user rewriting the instruction.
 - [ ] Confirm passing reviews say no required Codex repair is needed and separate optional follow-up from required fixes.
 
+## Auto-Merge
+
+- [ ] Confirm `.github/workflows/auto-merge-reviewed-pr.yml` runs after `GPT Review` completes.
+- [ ] Confirm auto-merge requires `FINAL_REVIEW_STATUS: PASS` in the review artifact.
+- [ ] Confirm auto-merge refuses artifacts containing `REVIEW_STATUS: NEEDS_REVISION` or `FINAL_REVIEW_STATUS: FAIL`.
+- [ ] Confirm auto-merge skips draft PRs.
+- [ ] Confirm auto-merge skips unmergeable PRs.
+- [ ] Confirm auto-merge skips PRs with `needs-human`, `blocked`, `no-auto-merge`, or `hold`.
+
+## Codex Autopilot
+
+- [ ] Create small issues for each implementation step.
+- [ ] Label ready issues with `codex-ready`.
+- [ ] Label high-priority ready issues with `priority-high`.
+- [ ] Use `needs-human`, `blocked`, or `hold` when Codex should stop.
+- [ ] Keep each `codex-ready` issue narrow enough for one PR when possible.
+- [ ] Confirm Codex reads `PROJECT_VISION.md`, `PROJECT_MEMORY.md`, and open issues before choosing the next step.
+- [ ] Confirm the repository has a Codex trigger integration if Codex should start automatically after merge. Otherwise, the user can say `次へ`.
+
 ## First Pull Request
 
 - [ ] Create a small initial PR.
@@ -69,4 +93,5 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm `REVIEW_STATUS` is shown in the workflow logs.
 - [ ] Confirm `FINAL_REVIEW_STATUS` is shown in the workflow logs.
 - [ ] Confirm the flow is `Codex -> PR -> automatic GPT review -> teacher-facing summary -> Codex Advisory`.
+- [ ] Confirm a PASS PR auto-merges when no stop condition exists.
 - [ ] Fix any setup problems before starting real feature work.
