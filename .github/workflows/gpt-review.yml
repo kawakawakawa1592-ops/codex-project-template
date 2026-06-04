@@ -29,7 +29,7 @@ jobs:
           python-version: "3.11"
 
       - name: Validate project Python script syntax
-        run: python -m py_compile scripts/*.py
+        run: git ls-files -z '*.py' | xargs -0 -r python -m py_compile
 
   project-gpt-review:
     if: github.event_name == 'pull_request_target'
