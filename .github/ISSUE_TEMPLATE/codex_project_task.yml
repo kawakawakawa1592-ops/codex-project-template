@@ -3,7 +3,7 @@ description: Plan a Codex implementation task with review-ready acceptance crite
 title: "[Codex] "
 labels:
   - codex
-  - needs-triage
+  - codex-ready
 body:
   - type: textarea
     id: goal
@@ -22,6 +22,19 @@ body:
     validations:
       required: false
   - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Keep this issue small enough for one PR when possible.
+      placeholder: |
+        In scope:
+        - 
+
+        Out of scope:
+        - 
+    validations:
+      required: false
+  - type: textarea
     id: acceptance
     attributes:
       label: Acceptance Criteria
@@ -30,20 +43,33 @@ body:
         - The feature works for ...
         - Tests or manual checks cover ...
         - GPT Review starts automatically on the PR.
+        - GPT Review returns FINAL_REVIEW_STATUS: PASS.
     validations:
       required: true
+  - type: checkboxes
+    id: autopilot
+    attributes:
+      label: Codex Autopilot
+      options:
+        - label: This issue is aligned with `PROJECT_VISION.md`.
+        - label: This issue can be implemented without additional human clarification.
+        - label: This issue should be handled as one PR when possible.
+        - label: If human judgment is needed, replace `codex-ready` with `needs-human`.
+        - label: If this issue should not auto-merge, add `no-auto-merge` to the PR.
   - type: checkboxes
     id: review_setup
     attributes:
       label: GPT Review Setup
       options:
         - label: `.github/workflows/gpt-review.yml` exists in this repository.
+        - label: `.github/workflows/auto-merge-reviewed-pr.yml` exists in this repository.
         - label: The workflow runs automatically on PR creation and updates.
         - label: The workflow has no `paths` restriction that would skip ordinary PRs.
         - label: The workflow runs trusted base-branch review code separately from PR content.
         - label: OpenAI secrets are scoped only to the trusted review step.
         - label: Codex does not need to request GPT Review manually.
         - label: `scripts/project_gpt_review.py` exists and detects PR mode from changed files.
+        - label: `scripts/auto_merge_reviewed_pr.py` exists and only merges after GPT Review PASS.
         - label: `.github/prompts/project_review_prompt.md` exists.
         - label: `OPENAI_API_KEY` is registered as a GitHub Actions secret.
         - label: `PRIMARY_REVIEW_MODEL` is set to `gpt-4.1-mini` or intentionally overridden.
