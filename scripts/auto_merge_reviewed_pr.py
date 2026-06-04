@@ -88,21 +88,25 @@ def get_pull_request(repo: str, run: dict, token: str) -> dict | None:
     return None
 
 
-def review_artifact_text(repo: str, run_id: int, token: str) -> str | None:
+def review_artifact(repo: str, run_id: int, token: str) -> tuple[str | None, dict]:
     status, payload = request_json("GET", f"{API_ROOT}/repos/{repo}/actions/runs/{run_id}/artifacts", token)
     if status != 200:
         raise RuntimeError(f"Could not list artifacts for run {run_id}: {payload.get('message', status)}")
     artifacts = payload.get("artifacts", [])
     artifact = next((item for item in artifacts if item.get("name") == "project-gpt-review" and not item.get("expired")), None)
     if not artifact:
-        return None
+        return None, {}
 
+    review = None
+    metadata = {}
     archive = request_bytes(artifact["archive_download_url"], token)
     with zipfile.ZipFile(BytesIO(archive)) as zipped:
         for name in zipped.namelist():
             if name.endswith("project_gpt_review.md"):
-                return zipped.read(name).decode("utf-8", errors="replace")
-    return None
+                review = zipped.read(name).decode("utf-8", errors="replace")
+            elif name.endswith("project_gpt_review_metadata.json"):
+                metadata = json.loads(zipped.read(name).decode("utf-8", errors="replace"))
+    return review, metadata
 
 
 def final_review_section(review: str) -> str:
@@ -130,6 +134,10 @@ def has_passing_review(review: str) -> bool:
         and review_status != "NEEDS_REVISION"
         and "REVIEW_STATUS: NEEDS_REVISION" not in review
     )
+
+
+def reviewed_head_sha(run: dict, metadata: dict) -> str | None:
+    return metadata.get("head_sha") or run.get("head_sha")
 
 
 def fresh_pr(repo: str, number: int, token: str) -> dict:
@@ -180,7 +188,7 @@ def main() -> int:
         print("Skipping because the completed workflow run is not a successful GPT Review run.")
         return 0
 
-    review = review_artifact_text(repo, run["id"], token)
+    review, metadata = review_artifact(repo, run["id"], token)
     if not review:
         print("Skipping because this GPT Review run has no project-gpt-review artifact.")
         return 0
@@ -195,6 +203,14 @@ def main() -> int:
 
     pr_number = pr["number"]
     pr = wait_for_mergeable(repo, pr_number, token)
+    reviewed_sha = reviewed_head_sha(run, metadata)
+    current_sha = pr.get("head", {}).get("sha")
+    if not reviewed_sha or reviewed_sha != current_sha:
+        reason = f"PR head changed after GPT Review passed; reviewed {reviewed_sha or 'unknown'}, current {current_sha or 'unknown'}"
+        print(f"Skipping auto-merge for PR #{pr_number}: {reason}")
+        comment(repo, pr_number, token, f"## Auto Merge Skipped\n\n{reason}.\n\nA newer GPT Review run must pass before this PR can auto-merge.")
+        return 0
+
     reason = stop_reason(pr)
     if reason:
         print(f"Skipping auto-merge for PR #{pr_number}: {reason}")
@@ -202,7 +218,6 @@ def main() -> int:
         return 0
 
     method = os.environ.get("AUTO_MERGE_METHOD", "merge").strip() or "merge"
-    head_sha = pr.get("head", {}).get("sha")
     status, payload = request_json(
         "PUT",
         f"{API_ROOT}/repos/{repo}/pulls/{pr_number}/merge",
@@ -210,7 +225,7 @@ def main() -> int:
         {
             "commit_title": f"Auto-merge PR #{pr_number}: {pr.get('title', '')}",
             "commit_message": "Merged automatically after GPT Review returned FINAL_REVIEW_STATUS: PASS.",
-            "sha": head_sha,
+            "sha": current_sha,
             "merge_method": method,
         },
     )
