@@ -187,6 +187,9 @@ def main() -> int:
     if run.get("name") != "GPT Review" or run.get("conclusion") != "success":
         print("Skipping because the completed workflow run is not a successful GPT Review run.")
         return 0
+    if run.get("event") != "pull_request_target":
+        print("Skipping because auto-merge only trusts pull_request_target GPT Review runs.")
+        return 0
 
     review, metadata = review_artifact(repo, run["id"], token)
     if not review:
