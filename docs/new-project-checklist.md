@@ -52,13 +52,21 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm PRs without `submission/` are still reviewed as template/workflow/setup PRs when appropriate.
 - [ ] Confirm workflow, script, prompt, README, docs, templates, project_rules, manuscripts, and references can be included in review context when present.
 
+## Codex Advisory
+
+- [ ] Confirm GPT Review comments include a `Codex Advisory` section.
+- [ ] Confirm failed reviews explain the problem, why it matters, recommended fix, files to edit, and acceptance criteria.
+- [ ] Confirm `Codex Fix Instructions` are specific enough for GitHub-internal Codex to implement without the user rewriting the instruction.
+- [ ] Confirm passing reviews say no required Codex repair is needed and separate optional follow-up from required fixes.
+
 ## First Pull Request
 
 - [ ] Create a small initial PR.
 - [ ] Confirm the `GPT Review` workflow starts automatically.
 - [ ] Confirm the PR receives a GPT review comment.
 - [ ] Confirm the GPT review comment includes a teacher-facing summary.
+- [ ] Confirm the GPT review comment includes a Codex Advisory.
 - [ ] Confirm `REVIEW_STATUS` is shown in the workflow logs.
 - [ ] Confirm `FINAL_REVIEW_STATUS` is shown in the workflow logs.
-- [ ] Confirm the flow is `Codex -> PR -> automatic GPT review -> teacher-facing summary`.
+- [ ] Confirm the flow is `Codex -> PR -> automatic GPT review -> teacher-facing summary -> Codex Advisory`.
 - [ ] Fix any setup problems before starting real feature work.
