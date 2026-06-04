@@ -43,7 +43,7 @@ For every PR, review in this order:
 7. Test or validation gaps.
 8. Codex Advisory and Codex Fix Instructions.
 
-For template or workflow PRs, the most important checks are whether automatic GPT Review still runs on every PR without Codex manually requesting it, whether auto-merge can only happen after a clean GPT Review PASS, and whether next-issue handoff can only select eligible ready issues.
+For template or workflow PRs, the most important checks are whether automatic GPT Review still runs on every PR without Codex manually requesting it, whether auto-merge can only happen after a clean GPT Review PASS, and whether next-issue handoff can only select eligible ready issues and actually trigger Codex when configured.
 
 ## Auto-Merge Requirements
 
@@ -74,7 +74,9 @@ If a PR creates or changes Codex next-issue handoff behavior, verify all of thes
 - Handoff prefers `priority-high`, then the oldest eligible issue.
 - Handoff adds or respects `codex-active` before posting the `@codex` comment.
 - Handoff comment tells Codex to read project context, keep issue scope, open one PR when needed, and stop for human/blocker conditions.
-- Documentation states that automatic pickup requires a configured Codex Cloud environment for the repository.
+- Handoff posts the `@codex` comment with `CODEX_TRIGGER_TOKEN`, not the default `GITHUB_TOKEN`, because `github-actions[bot]` authored mentions may not start Codex Cloud.
+- Handoff fails clearly when a ready issue is selected but `CODEX_TRIGGER_TOKEN` is missing.
+- Documentation states that automatic pickup requires both a configured Codex Cloud environment and a `CODEX_TRIGGER_TOKEN` Actions secret for the repository.
 
 ## Autopilot Requirements
 
@@ -86,7 +88,7 @@ If a PR creates or changes Codex autopilot behavior, verify all of these:
 - Codex is instructed to read `PROJECT_VISION.md`, `PROJECT_MEMORY.md`, README, and open issues before choosing the next step.
 - The flow says Codex should implement one issue per PR when possible.
 - The flow says GPT Review failure should be repaired using `Codex Advisory`.
-- The flow does not falsely claim that GitHub Actions alone can start Codex unless the repository has a configured Codex Cloud environment or separate Codex trigger integration.
+- The flow does not falsely claim that GitHub Actions alone can start Codex unless the repository has a configured Codex Cloud environment plus `CODEX_TRIGGER_TOKEN` or an equivalent non-actions Codex trigger integration.
 
 ## NEEDS_REVISION Conditions
 
@@ -104,7 +106,9 @@ Set `REVIEW_STATUS: NEEDS_REVISION` when any of the following are present:
 - Auto-merge can happen on draft, blocked, human-needed, or unmergeable PRs.
 - Handoff can select blocked, human-needed, held, already-active, closed, or PR-backed issues.
 - Handoff can repeatedly comment on the same issue without a duplicate guard.
-- Handoff implies Codex can start automatically without a configured Codex Cloud environment or equivalent trigger integration.
+- Handoff uses the default `GITHUB_TOKEN` for the `@codex` trigger comment, because that posts as `github-actions[bot]` and may not start Codex Cloud.
+- Handoff silently succeeds after selecting a ready issue when `CODEX_TRIGGER_TOKEN` is missing.
+- Handoff implies Codex can start automatically without a configured Codex Cloud environment and `CODEX_TRIGGER_TOKEN` or equivalent trigger integration.
 - Secrets are exposed or permissions are broader than needed.
 - The change introduces a likely bug, broken workflow, missing required file, unclear instructions, or important validation gap.
 - The Codex Advisory is too vague for Codex to implement the next repair.
