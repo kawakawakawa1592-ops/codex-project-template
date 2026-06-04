@@ -178,6 +178,17 @@ Selected issue: #{issue['number']} - {issue.get('title', '')}
 """
 
 
+def codex_trigger_token() -> str:
+    token = os.environ.get("CODEX_TRIGGER_TOKEN", "").strip()
+    if token:
+        return token
+    raise RuntimeError(
+        "CODEX_TRIGGER_TOKEN is required when a ready issue is selected. "
+        "GitHub Actions' default GITHUB_TOKEN comments as github-actions[bot], "
+        "which may not trigger Codex Cloud from @codex mentions."
+    )
+
+
 def main() -> int:
     token = os.environ.get("GITHUB_TOKEN", "")
     repo = os.environ.get("GITHUB_REPOSITORY", "")
@@ -192,9 +203,10 @@ def main() -> int:
         return 0
 
     issue_number = issue["number"]
+    trigger_token = codex_trigger_token()
     ensure_label(repo, token, ACTIVE_LABEL, "0e8a16", "Codex has been asked to start this issue.")
     add_labels(repo, token, issue_number, [ACTIVE_LABEL])
-    comment(repo, token, issue_number, handoff_body(issue))
+    comment(repo, trigger_token, issue_number, handoff_body(issue))
     print(f"Handed off issue #{issue_number} to Codex.")
     return 0
 

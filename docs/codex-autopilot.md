@@ -44,7 +44,7 @@ When the user says `作成開始`, `次へ`, or `次の作業に進んで`, Code
 8. If GPT Review fails, follow the `Codex Advisory` and update the PR.
 9. If GPT Review passes, the auto-merge workflow may merge the PR.
 10. After merge, `.github/workflows/codex-next-issue-handoff.yml` may hand off the next ready issue by posting an `@codex` comment.
-11. Codex Cloud can start the next issue automatically when the repository has a configured Codex environment.
+11. Codex Cloud can start the next issue automatically when the repository has both a configured Codex environment and a `CODEX_TRIGGER_TOKEN` Actions secret.
 12. If no automatic pickup occurs, the user can say `次へ` and Codex should continue from the ready issue or the handoff comment.
 
 ## Auto-Merge Conditions
@@ -78,14 +78,15 @@ The repository can hand off the next issue to Codex only when all of these are t
 - The issue has not already received a handoff marker comment.
 - `priority-high` issues are preferred.
 - Otherwise the oldest eligible issue is selected.
+- `CODEX_TRIGGER_TOKEN` exists as an Actions secret before the workflow posts an `@codex` comment.
 
 When a next issue is selected, the handoff workflow:
 
 1. Ensures the `codex-active` label exists.
 2. Adds `codex-active` to the selected issue.
-3. Posts an `@codex` comment with scope, project-context, and stop-condition instructions.
+3. Posts an `@codex` comment with scope, project-context, and stop-condition instructions using `CODEX_TRIGGER_TOKEN`.
 
-This requires a Codex Cloud environment for the repository if the `@codex` comment should start Codex automatically.
+This requires both a Codex Cloud environment for the repository and a `CODEX_TRIGGER_TOKEN` secret. The default GitHub Actions `GITHUB_TOKEN` posts as `github-actions[bot]`, and that bot-authored mention may not start Codex Cloud.
 
 ## Stop Conditions
 
@@ -93,6 +94,7 @@ Codex should stop and ask for human direction when any of these are true:
 
 - No ready issue exists.
 - The next issue has `needs-human`, `blocked`, `hold`, or `codex-active` from another active handoff.
+- `CODEX_TRIGGER_TOKEN` is missing when a ready issue needs to be handed to Codex automatically.
 - The requested work conflicts with `PROJECT_VISION.md`.
 - GPT Review returns `FINAL_REVIEW_STATUS: WARN` or `FAIL` and the `Codex Advisory` requires human confirmation.
 - The PR requires secrets, billing changes, destructive data operations, or irreversible repository changes.

@@ -34,6 +34,9 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Go to `Actions`.
 - [ ] Open the `Secrets` tab.
 - [ ] Add `OPENAI_API_KEY`.
+- [ ] Add `CODEX_TRIGGER_TOKEN` if automatic next-issue Codex pickup is desired.
+- [ ] Confirm `CODEX_TRIGGER_TOKEN` is a fine-grained GitHub token for an account that can comment on repository issues.
+- [ ] Confirm the token has repository access and at least Issues read/write permission.
 
 ## GitHub Variables
 
@@ -60,6 +63,7 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Leave agent internet access disabled unless the project requires internet during the agent phase.
 - [ ] Save the environment.
 - [ ] Test with an issue comment such as `@codex please confirm you can run from this issue`.
+- [ ] Confirm automatic pickup has both the Codex Cloud environment and `CODEX_TRIGGER_TOKEN`.
 
 ## Automatic GPT Review
 
@@ -97,8 +101,10 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm handoff accepts `codex-ready` and `ready-for-codex` labels.
 - [ ] Confirm handoff skips `needs-human`, `blocked`, `hold`, `no-auto-merge`, and `codex-active`.
 - [ ] Confirm handoff prefers `priority-high`, otherwise the oldest eligible issue.
-- [ ] Confirm handoff adds `codex-active` and posts an `@codex` start comment.
+- [ ] Confirm handoff requires `CODEX_TRIGGER_TOKEN` before posting an `@codex` start comment for a selected issue.
+- [ ] Confirm handoff adds `codex-active` and posts an `@codex` start comment using `CODEX_TRIGGER_TOKEN`.
 - [ ] Confirm duplicate handoff comments are prevented by the marker comment.
+- [ ] Confirm `github-actions[bot]` comments are not treated as a complete Codex Cloud trigger test.
 
 ## Codex Autopilot
 
@@ -108,7 +114,7 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Use `needs-human`, `blocked`, or `hold` when Codex should stop.
 - [ ] Keep each ready issue narrow enough for one PR when possible.
 - [ ] Confirm Codex reads `PROJECT_VISION.md`, `PROJECT_MEMORY.md`, and open issues before choosing the next step.
-- [ ] Confirm the repository has a Codex Cloud environment if Codex should start automatically after merge. Otherwise, the user can say `次へ`.
+- [ ] Confirm the repository has both a Codex Cloud environment and `CODEX_TRIGGER_TOKEN` if Codex should start automatically after merge. Otherwise, the user can say `次へ`.
 
 ## First Pull Request
 
@@ -122,4 +128,5 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Confirm the flow is `Codex -> PR -> automatic GPT review -> teacher-facing summary -> Codex Advisory`.
 - [ ] Confirm a PASS PR auto-merges when no stop condition exists.
 - [ ] Confirm a merged PR hands off the next ready issue when one exists.
+- [ ] Confirm Codex Cloud responds to the handoff comment.
 - [ ] Fix any setup problems before starting real feature work.

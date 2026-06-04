@@ -1,332 +1,55 @@
 # Codex Project Template
 
-This repository is the starter template for Codex development projects.
+This repository is a starter template for Codex development projects. Use `Use this template` when creating a new repository so each project starts with automatic GPT Review, guarded auto-merge, and Codex issue-queue handoff already wired in.
 
-Use `Use this template` when creating new repositories such as `medical-paper-app`, `radio-app`, `discussion-generator`, or any future Codex project. New projects should not need to rebuild the GPT review system from scratch.
-
-Every pull request automatically runs GPT Review through GitHub Actions. Codex does not need to request the review manually, and the user does not need to add a special instruction for each PR.
+Codex does not need to ask GPT Review to run. Every pull request is reviewed automatically by GitHub Actions.
 
 ```text
-Codex
+Codex opens or updates a PR
 v
-PR opened or updated
+GitHub Actions GPT Review runs automatically
 v
-GitHub Actions GPT Review
+Primary GPT review and final GPT review run
 v
-GPT-4.1-mini primary review
+PASS / WARN / FAIL is posted with Codex Advisory
 v
-GPT-5.5 final review
+PASS can auto-merge when no stop condition exists
 v
-Teacher-facing summary and Codex Advisory
-v
-PASS / WARN / FAIL
-v
-Auto-merge when PASS and no stop condition exists
-v
-Next codex-ready issue is handed to @codex when available
+Merged PR can hand off the next ready issue to @codex
 ```
 
 ## What This Template Provides
 
-New repositories that use this template get:
+- `.github/workflows/gpt-review.yml`: automatic GPT Review for all PR creation/update/reopen/ready-for-review events.
+- `.github/workflows/auto-merge-reviewed-pr.yml`: auto-merge after a trusted GPT Review PASS.
+- `.github/workflows/codex-next-issue-handoff.yml`: post-merge handoff to the next ready issue.
+- `scripts/project_gpt_review.py`: trusted review runner.
+- `scripts/auto_merge_reviewed_pr.py`: guarded merge runner.
+- `scripts/codex_next_issue_handoff.py`: ready-issue selector and Codex handoff runner.
+- `.github/prompts/project_review_prompt.md`: review and Codex Advisory prompt.
+- `PROJECT_VISION.md`: project goals, users, scope, and definition of done.
+- `PROJECT_MEMORY.md`: decisions, constraints, review notes, and next actions.
+- `docs/codex-autopilot.md`: issue queue and stop-condition rules.
+- `docs/new-project-checklist.md`: setup checklist for repositories created from this template.
 
-- An automatic GPT Review workflow at `.github/workflows/gpt-review.yml`
-- An automatic merge workflow at `.github/workflows/auto-merge-reviewed-pr.yml`
-- A next-issue handoff workflow at `.github/workflows/codex-next-issue-handoff.yml`
-- A repository-local review script at `scripts/project_gpt_review.py`
-- A repository-local auto-merge script at `scripts/auto_merge_reviewed_pr.py`
-- A repository-local handoff script at `scripts/codex_next_issue_handoff.py`
-- A review prompt at `.github/prompts/project_review_prompt.md`
-- `PROJECT_VISION.md` for project goals, users, and completion criteria
-- `PROJECT_MEMORY.md` for decisions, constraints, review notes, and next actions
-- An issue template for Codex tasks and the `codex-ready` queue
-- A pull request template with GPT review and auto-merge checks
-- A new project startup checklist at `docs/new-project-checklist.md`
-- Autopilot loop guidance at `docs/codex-autopilot.md`
-- Documentation for OpenAI API key, GitHub Variables, and GitHub Secrets setup
+## Required Secrets
 
-## Project Context Files
-
-Each project created from this template includes two context files for Codex and GPT Review.
-
-### PROJECT_VISION.md
-
-Use this file to record the product owner's intent:
-
-- project purpose
-- target users
-- product goals
-- out-of-scope items
-- definition of done
-
-### PROJECT_MEMORY.md
-
-Use this file to record what changed during the project:
-
-- decisions and reasons
-- technical, design, and operation constraints
-- GPT Review notes
-- Codex fixes
-- next actions
-
-Automatic GPT Review can use these files together with the issue, PR, README, workflow, prompt, and diff to judge whether the result matches the creator's intent.
-
-## Automatic GPT Review Workflow
-
-Every new Codex project includes this workflow:
+Configure these repository secrets under `Settings` -> `Secrets and variables` -> `Actions` -> `Secrets`.
 
 ```text
-.github/workflows/gpt-review.yml
+OPENAI_API_KEY=sk-...
+CODEX_TRIGGER_TOKEN=github_pat_...
 ```
 
-It runs on every pull request creation or update event:
+`OPENAI_API_KEY` is used only by the trusted `pull_request_target` GPT Review job.
 
-```yaml
-on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
-```
+`CODEX_TRIGGER_TOKEN` is used only when a ready issue is selected for Codex handoff. It must be a fine-grained GitHub token for an account that can comment on issues in the repository. Give it repository access and at least Issues read/write permission. The default Actions `GITHUB_TOKEN` posts comments as `github-actions[bot]`; those bot-authored `@codex` mentions may not start Codex Cloud, so the handoff workflow fails clearly when a ready issue exists but `CODEX_TRIGGER_TOKEN` is missing.
 
-The workflow intentionally has no `paths` restriction. Template-only, workflow-only, script-only, prompt-only, README-only, generated-file, manuscript, and reference changes are all eligible for automated review.
+Do not commit secrets to the repository, README files, issues, or pull requests.
 
-For secret safety, the workflow uses two jobs:
+## Required Variables
 
-- `review-script-safety-check` runs on `pull_request` with no OpenAI secret. It checks only review-script syntax from the PR.
-- `project-gpt-review` runs on `pull_request_target`. It uses trusted base-branch review code and treats the PR checkout only as review content.
-
-The GPT review job checks out two copies:
-
-- `trusted`: the base commit, used to run trusted review code.
-- `pr`: the pull request head commit, used only as review content.
-
-The OpenAI API key is scoped only to the trusted review step, and that step runs:
-
-```text
-python trusted/scripts/project_gpt_review.py
-```
-
-The script reviews files under the PR checkout and gathers changed files plus important repository context, including workflow files, scripts, prompts, README files, docs, templates, project_rules, manuscripts, references, and other reviewable changed files.
-
-## Codex Advisory
-
-GPT Review is not only a PASS / FAIL gate. It also acts as an advisor for Codex running inside GitHub.
-
-Every review includes a `Codex Advisory` section. When a PR needs revision, the advisory explains:
-
-- what is wrong
-- why it matters
-- the recommended repair approach
-- which files Codex should edit
-- the acceptance criteria for the next fix
-
-This lets GitHub-internal Codex read the PR review comment and repair the PR without the user rewriting the instruction manually.
-
-A failing review should include guidance like this:
-
-```text
-Codex Advisory:
-- Problem: README documents the feature, but docs/new-project-checklist.md does not include the required setup step.
-- Why it matters: New repositories may omit the setup and the automation will be incomplete.
-- Recommended fix: Add a checklist item under Automatic GPT Review.
-- Files to edit: docs/new-project-checklist.md
-- Acceptance criteria: The checklist names the required setup step and the review output returns PASS.
-- Optional follow-up: None.
-```
-
-The `Codex Fix Instructions` section then gives Codex a short ordered repair list.
-
-## Auto-Merge
-
-Every new Codex project includes this workflow:
-
-```text
-.github/workflows/auto-merge-reviewed-pr.yml
-```
-
-It runs after `GPT Review` completes. It merges a PR only when all of these are true:
-
-- `GPT Review` completed successfully.
-- The completed GPT Review run is the trusted `pull_request_target` run.
-- The `project-gpt-review` artifact contains `FINAL_REVIEW_STATUS: PASS`.
-- The artifact does not contain `REVIEW_STATUS: NEEDS_REVISION`.
-- The reviewed head SHA matches the current PR head SHA.
-- The PR is open.
-- The PR is not a draft.
-- The PR is mergeable.
-- The PR does not have a blocking label.
-
-Default blocking labels:
-
-```text
-needs-human,blocked,no-auto-merge,hold
-```
-
-The merge method defaults to `merge`. You can override it with this repository variable:
-
-```text
-AUTO_MERGE_METHOD=merge / squash / rebase
-```
-
-You can override blocking labels with:
-
-```text
-AUTO_MERGE_BLOCK_LABELS=needs-human,blocked,no-auto-merge,hold
-```
-
-## Codex Next-Issue Handoff
-
-Every new Codex project includes this workflow:
-
-```text
-.github/workflows/codex-next-issue-handoff.yml
-```
-
-It runs after a pull request is merged, and can also be run manually with `workflow_dispatch`. It selects the next issue and posts an `@codex` start comment so Codex Cloud can begin the next task.
-
-The handoff workflow selects an issue only when all of these are true:
-
-- The issue is open.
-- The issue has `codex-ready` or `ready-for-codex`.
-- The issue is not a pull request.
-- The issue does not have `needs-human`, `blocked`, `hold`, `no-auto-merge`, or `codex-active`.
-- The issue has not already received the handoff marker comment.
-
-Selection order:
-
-```text
-priority-high first
-then oldest eligible issue
-```
-
-When selected, the issue receives:
-
-- `codex-active`
-- an `@codex` comment with project-context, scope, PR, GPT Review, and stop-condition instructions
-
-This automatic pickup requires a Codex Cloud environment for the repository. If no environment is configured, the connector may reply with setup instructions instead of starting work.
-
-You can override handoff labels with these repository variables:
-
-```text
-CODEX_HANDOFF_READY_LABELS=codex-ready,ready-for-codex
-CODEX_HANDOFF_BLOCK_LABELS=needs-human,blocked,hold,no-auto-merge,codex-active
-CODEX_HANDOFF_ACTIVE_LABEL=codex-active
-CODEX_HANDOFF_PRIORITY_LABEL=priority-high
-```
-
-## Codex Autopilot Loop
-
-This template supports a queue-based project loop through GitHub issues.
-
-Recommended flow:
-
-```text
-User describes the desired product
-v
-Codex writes PROJECT_VISION.md and PROJECT_MEMORY.md
-v
-Codex breaks the project into small issues
-v
-Ready issues receive codex-ready or ready-for-codex
-v
-User says 作成開始 or 次へ, or a merged PR triggers handoff
-v
-Codex chooses the next ready issue
-v
-Codex implements one issue and opens one PR
-v
-GPT Review audits the PR and provides Codex Advisory if needed
-v
-PASS triggers auto-merge unless a stop condition exists
-v
-Merged PR triggers @codex handoff to the next ready issue when available
-```
-
-Use `docs/codex-autopilot.md` for the full issue queue and stop-condition rules.
-
-Important limitation: GitHub Actions can auto-merge passing PRs and post `@codex` handoff comments, but automatic Codex pickup requires a configured Codex Cloud environment for the repository. If automatic pickup does not occur, the user can still say `次へ` and Codex should continue from the next ready issue or the handoff comment.
-
-## PR Type Detection
-
-`project_gpt_review.py` automatically classifies PRs into one of these modes:
-
-- `TEMPLATE_OR_WORKFLOW_PR`
-- `MANUSCRIPT_SETUP_OR_GENERATED_FILES_PR`
-- `MANUSCRIPT_SUBMISSION_PR`
-
-PR type detection is based on changed files. Repository context is still included for review evidence, but unchanged context files do not change the detected PR mode.
-
-A PR without `submission/` is not skipped. If it changes template, workflow, prompt, script, README, docs, project_rules, templates, manuscripts, or references, GPT Review audits the actual work under the appropriate mode.
-
-## Use This Template Guarantee
-
-Projects created from this template are wired for the full automatic review path:
-
-```text
-Codex change
-v
-Pull request
-v
-.github/workflows/gpt-review.yml
-v
-trusted scripts/project_gpt_review.py
-v
-Primary GPT review
-v
-Final GPT review
-v
-Teacher-facing PR summary and Codex Advisory
-v
-.github/workflows/auto-merge-reviewed-pr.yml
-v
-Auto-merge when PASS and no stop condition exists
-v
-.github/workflows/codex-next-issue-handoff.yml
-v
-@codex handoff to the next ready issue when one exists
-```
-
-This path is guaranteed by the committed template files when these repository settings are present:
-
-- GitHub Actions is enabled.
-- `OPENAI_API_KEY` exists as an Actions secret.
-- `PRIMARY_REVIEW_MODEL` exists as an Actions variable with value `gpt-4.1-mini`, or the default is accepted.
-- `FINAL_REVIEW_MODEL` exists as an Actions variable with value `gpt-5.5`, or the default is accepted.
-- A Codex Cloud environment exists for repositories that should auto-start Codex from `@codex` handoff comments.
-- The pull request event is one of `opened`, `synchronize`, `reopened`, or `ready_for_review`.
-
-Codex does not need to ask GPT Review to run. The first test PR should confirm that the workflow starts automatically and posts a GPT review comment containing a teacher-facing summary and Codex Advisory.
-
-## Initial Setup For A New Repository
-
-1. Open this repository on GitHub.
-2. Click `Use this template`.
-3. Create the new Codex project repository.
-4. Register the `OPENAI_API_KEY` secret.
-5. Register the GitHub Variables.
-6. Create a Codex Cloud environment if `@codex` handoff should start Codex automatically.
-7. Fill in `PROJECT_VISION.md`.
-8. Update `PROJECT_MEMORY.md` as decisions are made.
-9. Plan small ready issues.
-10. Open a small test PR.
-11. Confirm the `GPT Review` workflow starts automatically.
-12. Confirm the PR receives a GPT review comment with a teacher-facing summary and Codex Advisory.
-13. Confirm a PASS PR auto-merges when no stop condition exists.
-14. Confirm a merged PR hands off the next ready issue with an `@codex` comment.
-
-## GitHub Variables Setup
-
-Configure variables in each repository created from this template.
-
-1. Open the target repository on GitHub.
-2. Open `Settings`.
-3. Open `Secrets and variables`.
-4. Open `Actions`.
-5. Select the `Variables` tab.
-6. Click `New repository variable`.
-7. Add these values:
+Configure these repository variables under `Settings` -> `Secrets and variables` -> `Actions` -> `Variables`.
 
 ```text
 PRIMARY_REVIEW_MODEL=gpt-4.1-mini
@@ -339,50 +62,151 @@ CODEX_HANDOFF_ACTIVE_LABEL=codex-active
 CODEX_HANDOFF_PRIORITY_LABEL=priority-high
 ```
 
-## Codex Cloud Environment Setup
+The model and label variables have defaults, but setting them explicitly makes new repositories easier to audit.
 
-Create a Codex Cloud environment for each repository where `@codex` handoff comments should start Codex automatically.
+## Codex Cloud Environment
+
+Create a Codex Cloud environment for every repository where `@codex` handoff comments should start Codex automatically.
 
 1. Open [Codex environments](https://chatgpt.com/codex/cloud/settings/environments).
 2. Create a new environment for the target repository.
 3. Use the `universal` container image unless the project needs a custom image.
 4. Leave setup script on automatic unless the project needs custom dependencies.
-5. Leave agent internet access disabled unless the project requires internet during the agent phase.
-6. Save the environment.
-7. Test with an issue comment such as `@codex please confirm you can run from this issue`.
+5. Save the environment.
+6. Test with an issue comment such as `@codex please confirm you can run from this issue`.
 
-## GitHub Secrets Setup
+Automatic pickup requires both the Codex Cloud environment and `CODEX_TRIGGER_TOKEN`. The environment lets Codex run in the repository; the token lets the GitHub Actions workflow post an `@codex` comment from a non-Actions identity that Codex Cloud can pick up.
 
-Configure the OpenAI API key in each repository created from this template.
+## Automatic GPT Review
 
-1. Open the target repository on GitHub.
-2. Open `Settings`.
-3. Open `Secrets and variables`.
-4. Open `Actions`.
-5. Select the `Secrets` tab.
-6. Click `New repository secret`.
-7. Add this secret:
+`gpt-review.yml` runs on both `pull_request` and `pull_request_target`.
+
+The `pull_request` job has no OpenAI secret and validates Python syntax from the PR. The `pull_request_target` job uses trusted base-branch code, checks out PR content only as review material, and calls:
 
 ```text
-OPENAI_API_KEY=sk-...
+python trusted/scripts/project_gpt_review.py
 ```
 
-GitHub masks secret values in Actions logs.
+The review has no `paths` restriction. Template, workflow, script, prompt, README, docs, templates, project rules, manuscript, reference, and generated-file PRs are all audited.
 
-## OPENAI_API_KEY Registration
+GPT Review classifies PRs into:
 
-The required secret name is:
+- `TEMPLATE_OR_WORKFLOW_PR`
+- `MANUSCRIPT_SETUP_OR_GENERATED_FILES_PR`
+- `MANUSCRIPT_SUBMISSION_PR`
+
+The PR mode is based on changed files. A PR is not skipped just because `submission/` is absent.
+
+## Codex Advisory
+
+GPT Review is also an advisor for Codex running inside GitHub. Each review includes a `Codex Advisory` and `Codex Fix Instructions` section. When the PR needs revision, the advisory should explain what is wrong, why it matters, which files to edit, how to repair the issue, and how Codex can know the fix is complete.
+
+## Auto-Merge
+
+`auto-merge-reviewed-pr.yml` runs after `GPT Review` completes. It merges only when all of these are true:
+
+- The completed workflow is `GPT Review`.
+- The workflow conclusion is `success`.
+- The review run is the trusted `pull_request_target` run.
+- The review artifact contains `FINAL_REVIEW_STATUS: PASS`.
+- The artifact does not contain `REVIEW_STATUS: NEEDS_REVISION` or `FINAL_REVIEW_STATUS: FAIL`.
+- The reviewed head SHA matches the current PR head SHA.
+- The PR is open, not draft, and mergeable.
+- The PR does not have a blocking label.
+
+Default blocking labels:
 
 ```text
-OPENAI_API_KEY
+needs-human,blocked,no-auto-merge,hold
 ```
 
-Use the OpenAI API key for the account that should pay for review usage. Do not commit the key to the repository, do not put it in README files, and do not paste it into issues or pull requests.
+## Codex Next-Issue Handoff
 
-## PASS / WARN / FAIL Policy
+`codex-next-issue-handoff.yml` runs after a PR is merged and can also be run manually with `workflow_dispatch`.
 
-The primary review returns `REVIEW_STATUS: NEEDS_REVISION` when the diff appears to contain a likely bug, missing requirement, security risk, broken workflow, weakened automatic review behavior, unsafe auto-merge behavior, unsafe handoff behavior, vague Codex Advisory, or important test gap. Otherwise it returns `REVIEW_STATUS: PASS`.
+It selects one issue only when all of these are true:
 
-The final review checks the primary result and the PR diff again. It returns `FINAL_REVIEW_STATUS: PASS` only when the pull request appears mergeable from the available diff, `FINAL_REVIEW_STATUS: WARN` when only non-blocking human follow-up remains, and `FINAL_REVIEW_STATUS: FAIL` when blocking issues remain.
+- The issue is open.
+- The issue has `codex-ready` or `ready-for-codex`.
+- The issue is not a pull request.
+- The issue does not have `needs-human`, `blocked`, `hold`, `no-auto-merge`, or `codex-active`.
+- The issue has not already received the stable handoff marker comment.
 
-When `FINAL_REVIEW_STATUS: FAIL` or `REVIEW_STATUS: NEEDS_REVISION` appears in the review, the workflow fails so the PR cannot be treated as passing review accidentally.
+Selection order:
+
+```text
+priority-high first
+then oldest eligible issue
+```
+
+When selected, the issue receives `codex-active`, then an `@codex` handoff comment posted with `CODEX_TRIGGER_TOKEN`. If the token is missing, the workflow fails instead of silently posting with `github-actions[bot]`.
+
+## Codex Autopilot Loop
+
+Recommended project flow:
+
+```text
+User describes the desired product
+v
+Codex writes PROJECT_VISION.md and PROJECT_MEMORY.md
+v
+Codex creates small codex-ready issues
+v
+User says 作成開始, or a merged PR triggers handoff
+v
+Codex implements one issue and opens one PR
+v
+GPT Review audits the PR and gives Codex Advisory if needed
+v
+PASS triggers auto-merge unless a stop condition exists
+v
+Merged PR triggers the next eligible issue handoff
+```
+
+Use `docs/codex-autopilot.md` for the full issue queue and stop-condition rules.
+
+## Stop Conditions
+
+Automation should stop when any of these are true:
+
+- No ready issue exists.
+- The next issue has `needs-human`, `blocked`, `hold`, or `codex-active`.
+- `CODEX_TRIGGER_TOKEN` is missing when a ready issue needs automatic Codex pickup.
+- The PR is draft, blocked, unmergeable, or labeled `no-auto-merge`.
+- GPT Review returns `FINAL_REVIEW_STATUS: WARN` or `FAIL` and requires human confirmation.
+- The work needs secrets, billing changes, destructive operations, or unclear product judgment.
+
+## New Repository Setup
+
+1. Click `Use this template`.
+2. Create the new repository.
+3. Add `OPENAI_API_KEY` as an Actions secret.
+4. Add `CODEX_TRIGGER_TOKEN` as an Actions secret if automatic next-issue pickup is desired.
+5. Add the repository variables listed above.
+6. Create a Codex Cloud environment for the repository.
+7. Fill in `PROJECT_VISION.md`.
+8. Update `PROJECT_MEMORY.md` as decisions are made.
+9. Create small issues and label ready work with `codex-ready` or `ready-for-codex`.
+10. Open a small test PR and confirm GPT Review runs automatically.
+11. Confirm a PASS PR auto-merges when no stop condition exists.
+12. Confirm a merged PR hands off the next ready issue and Codex Cloud responds.
+
+## Use This Template Guarantee
+
+When the required secrets, variables, and Codex Cloud environment are configured, projects created from this template are wired for this path:
+
+```text
+Codex change
+v
+Pull request
+v
+Automatic GPT Review
+v
+Codex Advisory
+v
+Auto-merge after trusted PASS
+v
+Next ready issue receives @codex handoff
+v
+Codex Cloud starts the next issue
+```
