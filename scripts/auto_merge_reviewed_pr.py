@@ -22,7 +22,7 @@ BLOCK_LABELS = {
 }
 
 
-def request_json(method: str, url: str, token: str, payload: dict | None = None) -> tuple[int, dict]:
+def request_json(method: str, url: str, token: str, payload: dict | None = None):
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = urllib.request.Request(
         url,
@@ -88,21 +88,21 @@ def get_pull_request(repo: str, run: dict, token: str) -> dict | None:
     return None
 
 
-def review_artifact_text(repo: str, run_id: int, token: str) -> str:
+def review_artifact_text(repo: str, run_id: int, token: str) -> str | None:
     status, payload = request_json("GET", f"{API_ROOT}/repos/{repo}/actions/runs/{run_id}/artifacts", token)
     if status != 200:
         raise RuntimeError(f"Could not list artifacts for run {run_id}: {payload.get('message', status)}")
     artifacts = payload.get("artifacts", [])
     artifact = next((item for item in artifacts if item.get("name") == "project-gpt-review" and not item.get("expired")), None)
     if not artifact:
-        raise RuntimeError("project-gpt-review artifact was not found")
+        return None
 
     archive = request_bytes(artifact["archive_download_url"], token)
     with zipfile.ZipFile(BytesIO(archive)) as zipped:
         for name in zipped.namelist():
             if name.endswith("project_gpt_review.md"):
                 return zipped.read(name).decode("utf-8", errors="replace")
-    raise RuntimeError("project_gpt_review.md was not found in the review artifact")
+    return None
 
 
 def has_passing_review(review: str) -> bool:
@@ -161,17 +161,20 @@ def main() -> int:
         print("Skipping because the completed workflow run is not a successful GPT Review run.")
         return 0
 
+    review = review_artifact_text(repo, run["id"], token)
+    if not review:
+        print("Skipping because this GPT Review run has no project-gpt-review artifact.")
+        return 0
+    if not has_passing_review(review):
+        print("Skipping because the GPT Review artifact does not contain a clean FINAL_REVIEW_STATUS: PASS.")
+        return 0
+
     pr = get_pull_request(repo, run, token)
     if not pr:
         print("Skipping because no open PR was found for the workflow run.")
         return 0
 
     pr_number = pr["number"]
-    review = review_artifact_text(repo, run["id"], token)
-    if not has_passing_review(review):
-        print("Skipping because the GPT Review artifact does not contain a clean FINAL_REVIEW_STATUS: PASS.")
-        return 0
-
     pr = wait_for_mergeable(repo, pr_number, token)
     reason = stop_reason(pr)
     if reason:
