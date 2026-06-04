@@ -1,0 +1,37 @@
+name: Codex Next Issue Handoff
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  codex-next-issue-handoff:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted handoff code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Hand off next ready issue to Codex
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CODEX_HANDOFF_READY_LABELS: ${{ vars.CODEX_HANDOFF_READY_LABELS || 'codex-ready,ready-for-codex' }}
+          CODEX_HANDOFF_BLOCK_LABELS: ${{ vars.CODEX_HANDOFF_BLOCK_LABELS || 'needs-human,blocked,hold,no-auto-merge,codex-active' }}
+          CODEX_HANDOFF_ACTIVE_LABEL: ${{ vars.CODEX_HANDOFF_ACTIVE_LABEL || 'codex-active' }}
+          CODEX_HANDOFF_PRIORITY_LABEL: ${{ vars.CODEX_HANDOFF_PRIORITY_LABEL || 'priority-high' }}
+        run: python scripts/codex_next_issue_handoff.py
