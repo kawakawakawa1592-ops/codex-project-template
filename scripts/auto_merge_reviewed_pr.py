@@ -140,7 +140,7 @@ def stop_reason(pr: dict) -> str | None:
         return f"PR has blocking label(s): {', '.join(blocked)}"
     if pr.get("mergeable") is not True:
         return "PR is not mergeable"
-    if pr.get("mergeable_state") not in {"clean", "has_hooks", "unstable"}:
+    if pr.get("mergeable_state") not in {"clean", "has_hooks"}:
         return f"PR mergeable_state is {pr.get('mergeable_state')}"
     return None
 
