@@ -30,6 +30,7 @@ jobs:
       - name: Hand off next ready issue to Codex
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          CODEX_TRIGGER_TOKEN: ${{ secrets.CODEX_TRIGGER_TOKEN }}
           CODEX_HANDOFF_READY_LABELS: ${{ vars.CODEX_HANDOFF_READY_LABELS || 'codex-ready,ready-for-codex' }}
           CODEX_HANDOFF_BLOCK_LABELS: ${{ vars.CODEX_HANDOFF_BLOCK_LABELS || 'needs-human,blocked,hold,no-auto-merge,codex-active' }}
           CODEX_HANDOFF_ACTIVE_LABEL: ${{ vars.CODEX_HANDOFF_ACTIVE_LABEL || 'codex-active' }}
