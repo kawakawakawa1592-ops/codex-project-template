@@ -16,12 +16,13 @@ READY_LABELS = [
     for label in os.environ.get("CODEX_HANDOFF_READY_LABELS", "codex-ready,ready-for-codex").split(",")
     if label.strip()
 ]
+ACTIVE_LABEL = os.environ.get("CODEX_HANDOFF_ACTIVE_LABEL", "codex-active").strip() or "codex-active"
 BLOCK_LABELS = {
     label.strip()
     for label in os.environ.get("CODEX_HANDOFF_BLOCK_LABELS", "needs-human,blocked,hold,no-auto-merge,codex-active").split(",")
     if label.strip()
 }
-ACTIVE_LABEL = os.environ.get("CODEX_HANDOFF_ACTIVE_LABEL", "codex-active").strip() or "codex-active"
+BLOCK_LABELS.add(ACTIVE_LABEL)
 PRIORITY_LABEL = os.environ.get("CODEX_HANDOFF_PRIORITY_LABEL", "priority-high").strip() or "priority-high"
 COMMENT_MARKER = "<!-- codex-next-issue-handoff -->"
 
@@ -42,14 +43,38 @@ def request_json(method: str, url: str, token: str, payload: dict | None = None)
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             body = response.read().decode("utf-8")
-            return response.status, json.loads(body) if body else {}
+            return response.status, json.loads(body) if body else {}, response.headers
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
         try:
             parsed = json.loads(body) if body else {}
         except json.JSONDecodeError:
             parsed = {"message": body}
-        return exc.code, parsed
+        return exc.code, parsed, exc.headers
+
+
+def next_link(headers) -> str | None:
+    link_header = headers.get("Link", "")
+    for part in link_header.split(","):
+        section = part.strip()
+        if 'rel="next"' not in section:
+            continue
+        if section.startswith("<") and ">" in section:
+            return section[1 : section.index(">")]
+    return None
+
+
+def paged_json(url: str, token: str) -> list[dict]:
+    results: list[dict] = []
+    while url:
+        status, payload, headers = request_json("GET", url, token)
+        if status != 200:
+            raise RuntimeError(f"GitHub list request failed: {payload.get('message', status)}")
+        if not isinstance(payload, list):
+            raise RuntimeError("GitHub list request returned an unexpected payload")
+        results.extend(payload)
+        url = next_link(headers)
+    return results
 
 
 def issue_labels(issue: dict) -> set[str]:
@@ -63,17 +88,13 @@ def issue_is_ready(issue: dict) -> bool:
 
 def list_issues_for_label(repo: str, token: str, label: str) -> list[dict]:
     query = urllib.parse.urlencode({"state": "open", "labels": label, "per_page": "100"})
-    status, payload = request_json("GET", f"{API_ROOT}/repos/{repo}/issues?{query}", token)
-    if status != 200:
-        raise RuntimeError(f"Could not list issues for label {label}: {payload.get('message', status)}")
+    payload = paged_json(f"{API_ROOT}/repos/{repo}/issues?{query}", token)
     return [item for item in payload if "pull_request" not in item]
 
 
 def has_handoff_comment(repo: str, token: str, issue_number: int) -> bool:
-    status, payload = request_json("GET", f"{API_ROOT}/repos/{repo}/issues/{issue_number}/comments?per_page=100", token)
-    if status != 200:
-        return False
-    return any(COMMENT_MARKER in (comment.get("body") or "") for comment in payload)
+    comments = paged_json(f"{API_ROOT}/repos/{repo}/issues/{issue_number}/comments?per_page=100", token)
+    return any(COMMENT_MARKER in (comment.get("body") or "") for comment in comments)
 
 
 def find_next_issue(repo: str, token: str) -> dict | None:
@@ -100,20 +121,39 @@ def find_next_issue(repo: str, token: str) -> dict | None:
 
 def ensure_label(repo: str, token: str, name: str, color: str, description: str) -> None:
     encoded = urllib.parse.quote(name, safe="")
-    status, _ = request_json("GET", f"{API_ROOT}/repos/{repo}/labels/{encoded}", token)
+    status, payload, _ = request_json("GET", f"{API_ROOT}/repos/{repo}/labels/{encoded}", token)
     if status == 200:
         return
-    request_json("POST", f"{API_ROOT}/repos/{repo}/labels", token, {"name": name, "color": color, "description": description})
+    if status != 404:
+        raise RuntimeError(f"Could not inspect label {name}: {payload.get('message', status)}")
+    status, payload, _ = request_json(
+        "POST",
+        f"{API_ROOT}/repos/{repo}/labels",
+        token,
+        {"name": name, "color": color, "description": description},
+    )
+    if status >= 300:
+        raise RuntimeError(f"Could not create label {name}: {payload.get('message', status)}")
 
 
 def add_labels(repo: str, token: str, issue_number: int, labels: list[str]) -> None:
-    status, payload = request_json("POST", f"{API_ROOT}/repos/{repo}/issues/{issue_number}/labels", token, {"labels": labels})
+    status, payload, _ = request_json(
+        "POST",
+        f"{API_ROOT}/repos/{repo}/issues/{issue_number}/labels",
+        token,
+        {"labels": labels},
+    )
     if status >= 300:
-        print(f"Warning: could not add labels to issue #{issue_number}: {payload.get('message', status)}")
+        raise RuntimeError(f"Could not add labels to issue #{issue_number}: {payload.get('message', status)}")
 
 
 def comment(repo: str, token: str, issue_number: int, body: str) -> None:
-    status, payload = request_json("POST", f"{API_ROOT}/repos/{repo}/issues/{issue_number}/comments", token, {"body": body[:65000]})
+    status, payload, _ = request_json(
+        "POST",
+        f"{API_ROOT}/repos/{repo}/issues/{issue_number}/comments",
+        token,
+        {"body": body[:65000]},
+    )
     if status >= 300:
         raise RuntimeError(f"Could not comment on issue #{issue_number}: {payload.get('message', status)}")
 
@@ -143,6 +183,8 @@ def main() -> int:
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     if not token or not repo:
         raise RuntimeError("GITHUB_TOKEN and GITHUB_REPOSITORY are required")
+    if not READY_LABELS:
+        raise RuntimeError("At least one ready label is required")
 
     issue = find_next_issue(repo, token)
     if not issue:
