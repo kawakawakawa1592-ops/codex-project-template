@@ -51,6 +51,7 @@ The repository can automatically merge a PR only when all of these are true:
 - The workflow conclusion is `success`.
 - The `project-gpt-review` artifact contains `FINAL_REVIEW_STATUS: PASS`.
 - The artifact does not contain `REVIEW_STATUS: NEEDS_REVISION`.
+- The reviewed head SHA from the workflow run or review metadata matches the current PR head SHA.
 - The PR is open.
 - The PR is not a draft.
 - The PR is mergeable.
