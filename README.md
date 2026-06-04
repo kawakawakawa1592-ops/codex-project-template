@@ -17,7 +17,7 @@ GPT-4.1-mini primary review
 v
 GPT-5.5 final review
 v
-Teacher-facing summary
+Teacher-facing summary and Codex Advisory
 v
 PASS / WARN / FAIL
 ```
@@ -100,6 +100,34 @@ python trusted/scripts/project_gpt_review.py
 
 The script reviews files under the PR checkout and gathers changed files plus important repository context, including workflow files, scripts, prompts, README files, docs, templates, project_rules, manuscripts, references, and other reviewable changed files.
 
+## Codex Advisory
+
+GPT Review is not only a PASS / FAIL gate. It also acts as an advisor for Codex running inside GitHub.
+
+Every review includes a `Codex Advisory` section. When a PR needs revision, the advisory explains:
+
+- what is wrong
+- why it matters
+- the recommended repair approach
+- which files Codex should edit
+- the acceptance criteria for the next fix
+
+This lets GitHub-internal Codex read the PR review comment and repair the PR without the user rewriting the instruction manually.
+
+A failing review should include guidance like this:
+
+```text
+Codex Advisory:
+- Problem: README documents the feature, but docs/new-project-checklist.md does not include the required setup step.
+- Why it matters: New repositories may omit the setup and the automation will be incomplete.
+- Recommended fix: Add a checklist item under Automatic GPT Review.
+- Files to edit: docs/new-project-checklist.md
+- Acceptance criteria: The checklist names the required setup step and the review output returns PASS.
+- Optional follow-up: None.
+```
+
+The `Codex Fix Instructions` section then gives Codex a short ordered repair list.
+
 ## PR Type Detection
 
 `project_gpt_review.py` automatically classifies PRs into one of these modes:
@@ -129,7 +157,7 @@ Primary GPT review
 v
 Final GPT review
 v
-Teacher-facing PR summary
+Teacher-facing PR summary and Codex Advisory
 ```
 
 This path is guaranteed by the committed template files when these repository settings are present:
@@ -140,7 +168,7 @@ This path is guaranteed by the committed template files when these repository se
 - `FINAL_REVIEW_MODEL` exists as an Actions variable with value `gpt-5.5`, or the default is accepted.
 - The pull request event is one of `opened`, `synchronize`, `reopened`, or `ready_for_review`.
 
-Codex does not need to ask GPT Review to run. The first test PR should confirm that the workflow starts automatically and posts a GPT review comment containing a teacher-facing summary.
+Codex does not need to ask GPT Review to run. The first test PR should confirm that the workflow starts automatically and posts a GPT review comment containing a teacher-facing summary and Codex Advisory.
 
 ## Initial Setup For A New Repository
 
@@ -153,7 +181,7 @@ Codex does not need to ask GPT Review to run. The first test PR should confirm t
 7. Update `PROJECT_MEMORY.md` as decisions are made.
 8. Open a small test PR.
 9. Confirm the `GPT Review` workflow starts automatically.
-10. Confirm the PR receives a GPT review comment with a teacher-facing summary.
+10. Confirm the PR receives a GPT review comment with a teacher-facing summary and Codex Advisory.
 
 ## GitHub Variables Setup
 
@@ -202,7 +230,7 @@ Use the OpenAI API key for the account that should pay for review usage. Do not 
 
 ## PASS / WARN / FAIL Policy
 
-The primary review returns `REVIEW_STATUS: NEEDS_REVISION` when the diff appears to contain a likely bug, missing requirement, security risk, broken workflow, weakened automatic review behavior, or important test gap. Otherwise it returns `REVIEW_STATUS: PASS`.
+The primary review returns `REVIEW_STATUS: NEEDS_REVISION` when the diff appears to contain a likely bug, missing requirement, security risk, broken workflow, weakened automatic review behavior, vague Codex Advisory, or important test gap. Otherwise it returns `REVIEW_STATUS: PASS`.
 
 The final review checks the primary result and the PR diff again. It returns `FINAL_REVIEW_STATUS: PASS` only when the pull request appears mergeable from the available diff, `FINAL_REVIEW_STATUS: WARN` when only non-blocking human follow-up remains, and `FINAL_REVIEW_STATUS: FAIL` when blocking issues remain.
 
