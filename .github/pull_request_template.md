@@ -25,6 +25,14 @@
 - [ ] `FINAL_REVIEW_MODEL` is `gpt-5.5` unless intentionally changed.
 - [ ] The expected flow is Codex -> PR -> automatic GPT review -> teacher-facing summary -> Codex Advisory.
 
+## Auto-Merge / Autopilot
+
+- [ ] `.github/workflows/auto-merge-reviewed-pr.yml` is present when this repository should auto-merge passing PRs.
+- [ ] `scripts/auto_merge_reviewed_pr.py` only merges after GPT Review success and `FINAL_REVIEW_STATUS: PASS`.
+- [ ] Draft, blocked, human-needed, held, and unmergeable PRs do not auto-merge.
+- [ ] Ready implementation work is represented as `codex-ready` issues.
+- [ ] Stop conditions use labels such as `needs-human`, `blocked`, `hold`, or `no-auto-merge`.
+
 ## Notes
 
 -
