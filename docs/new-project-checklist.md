@@ -46,7 +46,7 @@ Use this checklist whenever starting a new Codex GitHub repository.
 - [ ] Go to `Actions`.
 - [ ] Open the `Variables` tab.
 - [ ] Add `PRIMARY_REVIEW_MODEL` with value `gpt-4.1-mini`.
-- [ ] Add `FINAL_REVIEW_MODEL` with value `gpt-5.5`.
+- [ ] Add `FINAL_REVIEW_MODEL` with value `gpt-5.2`.
 - [ ] Optionally add `AUTO_MERGE_METHOD` with value `merge`, `squash`, or `rebase`.
 - [ ] Optionally add `AUTO_MERGE_BLOCK_LABELS` with value `needs-human,blocked,no-auto-merge,hold`.
 - [ ] Optionally add `CODEX_HANDOFF_READY_LABELS` with value `codex-ready,ready-for-codex`.

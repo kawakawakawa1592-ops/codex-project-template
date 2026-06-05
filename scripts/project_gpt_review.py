@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import urllib.error
@@ -17,7 +18,10 @@ REPO_ROOT = Path(os.environ.get("REVIEW_REPO_ROOT", Path.cwd())).resolve()
 MAX_FILE_CHARS = 14000
 MAX_TOTAL_CHARS = 90000
 DEFAULT_PRIMARY_MODEL = "gpt-4.1-mini"
-DEFAULT_FINAL_MODEL = "gpt-5.5"
+DEFAULT_FINAL_MODEL = "gpt-5.2"
+MODEL_ALIASES = {
+    "gpt-5.5": "gpt-5.2",
+}
 REVIEWABLE_SUFFIXES = {".md", ".txt", ".py", ".js", ".ts", ".tsx", ".jsx", ".yml", ".yaml", ".json", ".toml", ".ini", ".cfg", ".sh"}
 REVIEWABLE_FILENAMES = {"README", "README.md", ".gitignore", "Dockerfile"}
 IMPORTANT_GLOBS = [
@@ -118,6 +122,8 @@ def post_json(url: str, headers: dict[str, str], payload: dict, timeout: int) ->
         except json.JSONDecodeError:
             parsed = {"message": body}
         return exc.code, parsed
+    except (urllib.error.URLError, TimeoutError, socket.timeout) as exc:
+        return 599, {"message": str(exc)}
 
 
 def extract_text(payload: dict) -> str:
@@ -131,11 +137,16 @@ def extract_text(payload: dict) -> str:
     return "\n".join(parts).strip()
 
 
+def resolved_model(model_env: str, default_model: str) -> str:
+    configured = os.environ.get(model_env, default_model).strip() or default_model
+    return MODEL_ALIASES.get(configured, configured)
+
+
 def call_openai(prompt: str, model_env: str, default_model: str) -> str:
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
         return "REVIEW_STATUS: NEEDS_REVISION\nFINAL_REVIEW_STATUS: FAIL\n\nRequired fixes:\n- Configure OPENAI_API_KEY so automated GPT Review can audit every pull request.\n"
-    model = os.environ.get(model_env, default_model).strip() or default_model
+    model = resolved_model(model_env, default_model)
     status, payload = post_json(
         "https://api.openai.com/v1/responses",
         {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -144,7 +155,7 @@ def call_openai(prompt: str, model_env: str, default_model: str) -> str:
     )
     if status >= 400:
         message = payload.get("error", {}).get("message") or payload.get("message") or "Unknown API error"
-        return f"REVIEW_STATUS: NEEDS_REVISION\nFINAL_REVIEW_STATUS: FAIL\n\nRequired fixes:\n- OpenAI API review request failed with HTTP {status}: {message}.\n"
+        return f"REVIEW_STATUS: NEEDS_REVISION\nFINAL_REVIEW_STATUS: FAIL\n\nRequired fixes:\n- OpenAI API review request failed with HTTP {status} using model `{model}`: {message}.\n"
     return extract_text(payload) or "REVIEW_STATUS: NEEDS_REVISION\nFINAL_REVIEW_STATUS: FAIL\n\nRequired fixes:\n- OpenAI API returned no review text.\n"
 
 
