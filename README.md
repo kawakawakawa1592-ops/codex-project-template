@@ -53,7 +53,7 @@ Configure these repository variables under `Settings` -> `Secrets and variables`
 
 ```text
 PRIMARY_REVIEW_MODEL=gpt-4.1-mini
-FINAL_REVIEW_MODEL=gpt-5.5
+FINAL_REVIEW_MODEL=gpt-5.2
 AUTO_MERGE_METHOD=merge
 AUTO_MERGE_BLOCK_LABELS=needs-human,blocked,no-auto-merge,hold
 CODEX_HANDOFF_READY_LABELS=codex-ready,ready-for-codex
@@ -62,7 +62,7 @@ CODEX_HANDOFF_ACTIVE_LABEL=codex-active
 CODEX_HANDOFF_PRIORITY_LABEL=priority-high
 ```
 
-The model and label variables have defaults, but setting them explicitly makes new repositories easier to audit.
+The model and label variables have defaults, but setting them explicitly makes new repositories easier to audit. Older repositories that still have `FINAL_REVIEW_MODEL=gpt-5.5` are normalized by the review runner to `gpt-5.2`.
 
 ## Codex Cloud Environment
 
