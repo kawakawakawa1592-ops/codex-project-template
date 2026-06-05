@@ -2,6 +2,26 @@
 
 This template includes `.github/workflows/zotero-reference-search.yml` and `scripts/zotero_search.py`. When a new repository is created with GitHub `Use this template`, these files are copied into the new repository.
 
+## Where To Look First
+
+For case report writing, use the case-specific output folder first:
+
+```text
+manuscripts/{case_id}/generated/
+```
+
+Recommended reading order:
+
+```text
+manuscripts/{case_id}/generated/zotero_api_diagnostics.md
+manuscripts/{case_id}/generated/zotero_collection_inventory.md
+manuscripts/{case_id}/generated/citation_evidence_cards.md
+manuscripts/{case_id}/generated/03_selected_references.md
+manuscripts/{case_id}/generated/08_notes_for_revision.md
+```
+
+The `references/` folder is for shared project-level literature notes. It is not the primary place to inspect case-specific evidence.
+
 ## Recommended Input
 
 Prefer collection/folder extraction when the relevant papers are already grouped in Zotero.
@@ -28,15 +48,7 @@ debug: true
 
 ## Outputs
 
-The workflow writes shared reference outputs:
-
-```text
-references/zotero_search_results.md
-references/citation_evidence_cards.md
-references/pdf_fulltext_review.md
-```
-
-It also writes case-specific outputs:
+Case-specific outputs:
 
 ```text
 manuscripts/{case_id}/generated/zotero_collection_inventory.md
@@ -48,6 +60,16 @@ manuscripts/{case_id}/generated/02_zotero_search_results.md
 manuscripts/{case_id}/generated/03_selected_references.md
 manuscripts/{case_id}/generated/08_notes_for_revision.md
 ```
+
+Shared reference outputs may also be written for compatibility with older projects:
+
+```text
+references/zotero_search_results.md
+references/citation_evidence_cards.md
+references/pdf_fulltext_review.md
+```
+
+When both exist, prefer the case-specific files under `manuscripts/{case_id}/generated/`.
 
 ## Troubleshooting
 
