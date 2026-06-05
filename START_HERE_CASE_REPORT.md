@@ -90,6 +90,24 @@ manuscripts/{case_id}/submission/
 10_revision_notes.md
 ```
 
+## 6. 考察の質を上げる
+
+考察を書く前、または考察を校正するときは、必ず以下を参照します。
+
+```text
+project_rules/case_report_discussion_policy.md
+templates/discussion_revision_checklist.md
+```
+
+考察は文献紹介ではなく、本症例で生じた臨床判断の問いに答える文章として構成します。
+
+Codexに考察修正を依頼するときは、以下のように明記してください。
+
+```text
+考察は project_rules/case_report_discussion_policy.md に従って修正してください。
+templates/discussion_revision_checklist.md で自己点検し、段落間のつながりとAI感を改善してください。
+```
+
 ## Codexへの依頼例
 
 ```text
@@ -98,6 +116,7 @@ case_id: case_report_001
 投稿規定: journal_guidelines/README.mdを確認
 症例情報: manuscripts/case_report_001/00_case_input.mdを使用
 文献: manuscripts/case_report_001/generated/citation_evidence_cards.mdで確認できる文献のみ使用
+考察: project_rules/case_report_discussion_policy.mdに従い、文献紹介ではなく臨床判断の問いに答える構成にする
 出力: manuscripts/case_report_001/submission/に投稿用一式を作成
 不足情報は推測せず要確認として残す
 ```
@@ -107,5 +126,6 @@ case_id: case_report_001
 - 症例情報にない事実を追加しない。
 - Zoteroで内容確認できない文献を引用しない。
 - 投稿規定は `journal_guidelines/` 内の情報を優先する。
+- 考察は `project_rules/case_report_discussion_policy.md` に従い、文献羅列ではなく臨床判断の流れとして書く。
 - 患者同意、倫理、COI、著者情報、図表匿名化は必ずチェックリストに残す。
 - 図表数と本文文字数は投稿規定に合わせて最終調整する。
