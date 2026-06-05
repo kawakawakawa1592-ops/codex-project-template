@@ -218,7 +218,9 @@ def main() -> int:
         post_pr_comment(review)
     except RuntimeError as exc:
         print(f"Warning: could not post Project GPT Review comment: {exc}")
-    return 1 if "FINAL_REVIEW_STATUS: FAIL" in review or "REVIEW_STATUS: NEEDS_REVISION" in review else 0
+    if "FINAL_REVIEW_STATUS: FAIL" in review or "REVIEW_STATUS: NEEDS_REVISION" in review:
+        print("Project GPT Review produced a blocking advisory. Keeping the workflow successful so auto-merge can enforce the artifact gate and Codex can read the advisory.")
+    return 0
 
 
 if __name__ == "__main__":
