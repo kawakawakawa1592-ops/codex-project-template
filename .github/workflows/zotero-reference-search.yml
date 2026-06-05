@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       case_id:
-        description: "Case ID"
+        description: "Case ID, e.g. case_report_001"
         required: true
-        default: "case_report_000"
+        default: "case_report_001"
       reference_source:
-        description: "Reference source: collection or keyword"
+        description: "Reference source: collection, keyword, or auto"
         required: true
         default: "collection"
       zotero_collection_names:
@@ -20,11 +20,11 @@ on:
         required: false
         default: ""
       search_keywords:
-        description: "Optional keywords for full-library search and evidence/PDF scoring"
+        description: "Optional keywords for fallback search and evidence/PDF scoring"
         required: false
         default: "renal trauma urinary extravasation pediatric"
       max_results:
-        description: "Max results"
+        description: "Max citable Zotero items to extract"
         required: true
         default: "50"
       debug:
@@ -83,11 +83,12 @@ jobs:
 
           - Zotero extraction step outcome: ${{ steps.zotero_search.outcome }}
           - Zotero extraction step conclusion: ${{ steps.zotero_search.conclusion }}
+          - Case output folder: `manuscripts/${{ inputs.case_id }}/generated/`
           - Reference source: ${{ inputs.reference_source }}
           - Zotero collection names: ${{ inputs.zotero_collection_names }}
           - Zotero collection key(s): ${{ inputs.zotero_collection_key }}
           - Search keywords: ${{ inputs.search_keywords }}
-          - If the generated evidence cards are empty, inspect `zotero_api_diagnostics.md` for collection-name resolution or keyword-search results.
+          - Start with `zotero_api_diagnostics.md`, then read `citation_evidence_cards.md`.
           - Secret values are never written to this file.
           EOF
 
@@ -96,9 +97,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zotero-reference-search-${{ inputs.case_id }}
-          path: |
-            references/*.md
-            manuscripts/${{ inputs.case_id }}/generated/*.md
+          path: manuscripts/${{ inputs.case_id }}/generated/*.md
           if-no-files-found: warn
 
       - name: Commit generated files
@@ -107,4 +106,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Generate Zotero reference search outputs"
-          file_pattern: "references/*.md manuscripts/${{ inputs.case_id }}/generated/*.md"
+          file_pattern: "manuscripts/${{ inputs.case_id }}/generated/*.md"
