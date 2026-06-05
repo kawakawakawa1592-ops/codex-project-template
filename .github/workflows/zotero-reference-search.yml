@@ -1,0 +1,110 @@
+name: Zotero Reference Search
+
+on:
+  workflow_dispatch:
+    inputs:
+      case_id:
+        description: "Case ID"
+        required: true
+        default: "case_report_000"
+      reference_source:
+        description: "Reference source: collection or keyword"
+        required: true
+        default: "collection"
+      zotero_collection_names:
+        description: "Zotero collection/folder names, comma or newline separated"
+        required: false
+        default: ""
+      zotero_collection_key:
+        description: "Optional Zotero collection key(s), comma or newline separated"
+        required: false
+        default: ""
+      search_keywords:
+        description: "Optional keywords for full-library search and evidence/PDF scoring"
+        required: false
+        default: "renal trauma urinary extravasation pediatric"
+      max_results:
+        description: "Max results"
+        required: true
+        default: "50"
+      debug:
+        description: "Enable detailed Zotero API diagnostics"
+        required: true
+        default: "true"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  zotero-reference-search:
+    runs-on: ubuntu-latest
+    env:
+      ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+      ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+      ZOTERO_LIBRARY_TYPE: ${{ secrets.ZOTERO_LIBRARY_TYPE }}
+      ZOTERO_COLLECTION_KEY: ${{ secrets.ZOTERO_COLLECTION_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install "requests>=2.31.0"
+
+      - name: Run Zotero reference extraction
+        id: zotero_search
+        continue-on-error: true
+        run: |
+          python scripts/zotero_search.py \
+            --case-id "${{ inputs.case_id }}" \
+            --reference-source "${{ inputs.reference_source }}" \
+            --zotero-collection-names "${{ inputs.zotero_collection_names }}" \
+            --zotero-collection-key "${{ inputs.zotero_collection_key }}" \
+            --search-keywords "${{ inputs.search_keywords }}" \
+            --max-results "${{ inputs.max_results }}" \
+            --debug "${{ inputs.debug }}"
+
+      - name: Write workflow status note
+        if: always()
+        run: |
+          mkdir -p "manuscripts/${{ inputs.case_id }}/generated"
+          cat > "manuscripts/${{ inputs.case_id }}/generated/workflow_run_status.md" <<'EOF'
+          <!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->
+
+          # Zotero Reference Search Workflow Status
+
+          - Zotero extraction step outcome: ${{ steps.zotero_search.outcome }}
+          - Zotero extraction step conclusion: ${{ steps.zotero_search.conclusion }}
+          - Reference source: ${{ inputs.reference_source }}
+          - Zotero collection names: ${{ inputs.zotero_collection_names }}
+          - Zotero collection key(s): ${{ inputs.zotero_collection_key }}
+          - Search keywords: ${{ inputs.search_keywords }}
+          - If the generated evidence cards are empty, inspect `zotero_api_diagnostics.md` for collection-name resolution or keyword-search results.
+          - Secret values are never written to this file.
+          EOF
+
+      - name: Upload generated diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zotero-reference-search-${{ inputs.case_id }}
+          path: |
+            references/*.md
+            manuscripts/${{ inputs.case_id }}/generated/*.md
+          if-no-files-found: warn
+
+      - name: Commit generated files
+        if: always()
+        continue-on-error: true
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Generate Zotero reference search outputs"
+          file_pattern: "references/*.md manuscripts/${{ inputs.case_id }}/generated/*.md"
