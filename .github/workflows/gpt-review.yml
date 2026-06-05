@@ -64,7 +64,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PRIMARY_REVIEW_MODEL: ${{ vars.PRIMARY_REVIEW_MODEL || 'gpt-4.1-mini' }}
-          FINAL_REVIEW_MODEL: ${{ vars.FINAL_REVIEW_MODEL || 'gpt-5.5' }}
+          FINAL_REVIEW_MODEL: ${{ vars.FINAL_REVIEW_MODEL || 'gpt-5.2' }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REVIEW_REPO_ROOT: ${{ github.workspace }}/pr
